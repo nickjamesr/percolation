@@ -6,6 +6,7 @@
 # include "heads/lattice.h"
 
 lattice::lattice(void){
+  // Empty constructor (never really used but I think it's necessary)
   dimx = 0;
   dimy = 0;
   dimz = 0;
@@ -15,6 +16,7 @@ lattice::lattice(void){
 }
 
 lattice::lattice(const lattice& lat) : graph(lat.size){
+  // Copy constructor with deep copy of adjacency list
   dimx = lat.dimx;
   dimy = lat.dimy;
   dimz = lat.dimz;
@@ -26,6 +28,7 @@ lattice::lattice(const lattice& lat) : graph(lat.size){
 }
 
 lattice::lattice(lattice_t D, uint L, uint M, uint N) : graph(L*M*N*D.size){
+  // Constructs an LxMxN lattice from the unit cell D
   dimx = L;
   dimy = M;
   dimz = N;
@@ -36,7 +39,7 @@ lattice::lattice(lattice_t D, uint L, uint M, uint N) : graph(L*M*N*D.size){
   int outw, outx, outy, outz;
   for (iterator I(D.size, dimx, dimy, dimz); I<size; I++){
     n = I.index();
-    for (int i=0; i<D.adjacency[I[0]].size(); i++){
+    for (uint i=0; i<D.adjacency[I[0]].size(); i++){
       outw = D.geth(I[0],i);
       outx = I[1] + D.geti(I[0],i);
       outy = I[2] + D.getj(I[0],i);
@@ -51,9 +54,47 @@ lattice::lattice(lattice_t D, uint L, uint M, uint N) : graph(L*M*N*D.size){
   }
 }
 
+// Desctructor
 lattice::~lattice(void){
 }
 
+// Assignment operator with deep copy of adjacency list
+lattice lattice::operator=(const lattice lat){
+  delete[] adjacency;
+  size = lat.size;
+  dimx = lat.dimx;
+  dimy = lat.dimy;
+  dimz = lat.dimz;
+  type = lat.type;
+  adjacency = new std::vector<uint>[size];
+  for (uint i=0; i<size; i++){
+    adjacency[i] = lat.adjacency[i];
+  }
+  return *this;
+}
+
+// Helper function for converting 4-position into global index
+uint lattice::fromCoord(int h, int i, int j, int k){
+  return h + type.size*(i + dimx*(j + dimy* k));
+}
+
+// Currently just a brief summary of the lattice properties
+void lattice::print(void){
+  std::cout << type.label << " lattice of size " << dimx << " x " << dimy <<
+    " x " << dimz << std::endl;
+/*  int n, from, to;
+  for (iterator I(type.size, dimx, dimy, dimz); I<size; I++){
+    from = I.index();
+    n = adjacency[from].size();
+    for (int i=0; i<n; i++){
+      to = adjacency[from][i];
+      std::cout << from << " -> " << to << std::endl;
+    }
+    std::cout << std::endl;
+  }*/
+}
+
+// Nested class for iterating through lattices
 lattice::iterator::iterator(){
   size[0] = size[1] = size[2] = size[3] = 0;
   n = 0;
@@ -119,28 +160,7 @@ bool lattice::iterator::operator>=(uint i) const{
   return (n>=i);
 }
 
-lattice lattice::operator=(const lattice lat){
-  delete[] adjacency;
-  size = lat.size;
-  dimx = lat.dimx;
-  dimy = lat.dimy;
-  dimz = lat.dimz;
-  type = lat.type;
-  adjacency = new std::vector<uint>[size];
-  for (int i=0; i<size; i++){
-    adjacency[i] = lat.adjacency[i];
-  }
-  return *this;
-}
 
-uint lattice::fromCoord(int h, int i, int j, int k){
-  return h + type.size*(i + dimx*(j + dimy* k));
-}
-
-void lattice::print(void){
-  std::cout << type.label << " lattice of size " << dimx << " x " << dimy <<
-    " x " << dimz << std::endl;
-}
 
 // lattice_t methods
 

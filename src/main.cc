@@ -9,7 +9,9 @@
 #include "heads/main.h"
 
 int main(int argc, char** argv){
-  lattice L(lattices::diamond(), 2, 2, 2);
+  lattice L(lattices::raussendorf(), 50, 50, 50);
+  L.print();
+  L.percolate(0.5);
   L.print();
 
   return 0;

@@ -7,6 +7,9 @@
 #include <cstdlib>
 #include <iostream>
 #include <vector>
+#include <cmath>
+
+#include <gsl/gsl_rng.h>
 
 class graph{
   private:
@@ -23,7 +26,8 @@ class graph{
     // Overloads
     graph operator=(graph);
     // Access methods
-    void print(void);
+    void percolate(double, uint seed=314);
+    void print(void) const;
 };
 
 #endif

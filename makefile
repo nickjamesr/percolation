@@ -6,7 +6,8 @@ docdir = doc
 utils = .gitignore makefile
 
 cc = g++
-cflags = -c -g
+cflags = -c -g -Wall
+lflags = -lgsl -lgslcblas -lm
 
 objects = $(subst $(srcdir),$(objdir),\
 $(patsubst %.cc,%.o,$(wildcard $(srcdir)/*.cc)))
@@ -20,7 +21,7 @@ $(objdir)/%.o : $(srcdir)/%.cc $(hdir)/%.h
 
 # Compile binary
 $(bindir)/percolate : $(objects)
-	$(cc) $(lflags) -o $@ $^
+	$(cc) $(lflags) -o $@ $^ $(lflags)
 
 # Utilities
 dirs :

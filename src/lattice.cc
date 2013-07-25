@@ -25,15 +25,98 @@ lattice::lattice(const lattice& lat) : graph(lat.size){
   }
 }
 
-lattice::lattice(lattice_t D, uint L, uint M, uint N) : graph(L*M*N){
+lattice::lattice(lattice_t D, uint L, uint M, uint N) : graph(L*M*N*D.size){
   dimx = L;
   dimy = M;
   dimz = N;
-  size = L*M*N;
+  size = L*M*N*D.size;
   type = D;
+  uint n=0;
+  uint connect=0;
+  int outw, outx, outy, outz;
+  for (iterator I(D.size, dimx, dimy, dimz); I<size; I++){
+    n = I.index();
+    for (int i=0; i<D.adjacency[I[0]].size(); i++){
+      outw = D.geth(I[0],i);
+      outx = I[1] + D.geti(I[0],i);
+      outy = I[2] + D.getj(I[0],i);
+      outz = I[3] + D.getk(I[0],i);
+      if (outx >= 0 && outx < dimx &&
+          outy >= 0 && outy < dimy &&
+          outz >= 0 && outz < dimz){
+        connect = fromCoord(outw, outx, outy, outz);
+        adjacency[n].push_back(connect);
+      }
+    }
+  }
 }
 
 lattice::~lattice(void){
+}
+
+lattice::iterator::iterator(){
+  size[0] = size[1] = size[2] = size[3] = 0;
+  n = 0;
+  coord[0] = coord[1] = coord[2] = coord[3] = 0;
+}
+
+lattice::iterator::iterator(uint dimw, uint dimx, uint dimy, uint dimz){
+  size[0] = dimw;
+  size[1] = dimx;
+  size[2] = dimy;
+  size[3] = dimz;
+  n = 0;
+  coord[0] = coord[1] = coord[2] = coord[3] = 0;
+}
+
+void lattice::iterator::operator++(int){
+  n++;
+  if (coord[0]<size[0]-1){
+    coord[0]++;
+  }
+  else if (coord[1]<size[1]-1){
+    coord[0] = 0;
+    coord[1]++;
+  }
+  else if (coord[2]<size[2]-1){
+    coord[0] = 0;
+    coord[1] = 0;
+    coord[2]++;
+  }
+  else if (coord[3]<size[3]-1){
+    coord[0] = 0;
+    coord[1] = 0;
+    coord[2] = 0;
+    coord[3]++;
+  }
+  else{
+    coord[0] = coord[1] = coord[2] = coord[3] = 0;
+  }
+}
+
+uint lattice::iterator::operator[](uint i) const{
+  if (i<4){
+    return coord[i];
+  }
+  else{
+    return 0;
+  }
+}
+
+bool lattice::iterator::operator<(uint i) const{
+  return (n<i);
+}
+
+bool lattice::iterator::operator>(uint i) const{
+  return (n>i);
+}
+
+bool lattice::iterator::operator<=(uint i) const{
+  return (n<=i);
+}
+
+bool lattice::iterator::operator>=(uint i) const{
+  return (n>=i);
 }
 
 lattice lattice::operator=(const lattice lat){
@@ -48,6 +131,10 @@ lattice lattice::operator=(const lattice lat){
     adjacency[i] = lat.adjacency[i];
   }
   return *this;
+}
+
+uint lattice::fromCoord(int h, int i, int j, int k){
+  return h + type.size*(i + dimx*(j + dimy* k));
 }
 
 void lattice::print(void){

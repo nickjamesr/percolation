@@ -9,12 +9,8 @@
 #include "heads/main.h"
 
 int main(int argc, char** argv){
-  lattice_t D = lattices::cubic();
-  D.print();
-  D = lattices::raussendorf();
-  D.print();
-  lattice_t T(lattices::diamond());
-  T.print();
+  lattice L(lattices::diamond(), 2, 2, 2);
+  L.print();
 
   return 0;
 }

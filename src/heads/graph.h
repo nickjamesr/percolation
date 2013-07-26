@@ -8,15 +8,31 @@
 #include <iostream>
 #include <vector>
 #include <cmath>
+#include <queue>
 
 #include <gsl/gsl_rng.h>
+
+class vertex{
+  private:
+  public:
+    vertex* parent;
+    bool visited;
+    uint distance;
+    std::vector<vertex*> adj;
+    // Constructors
+    vertex(void);
+    // Access methods
+    void reset(void);
+    void add(vertex*);
+    void percolate(double, gsl_rng*);
+};
 
 class graph{
   private:
   protected:
     uint size;
-    std::vector<uint>* adjacency;
   public:
+    vertex* adj;
     // Constructors
     graph(void);
     graph(uint);
@@ -27,6 +43,7 @@ class graph{
     graph operator=(graph);
     // Access methods
     void percolate(double, uint seed=314);
+    void bfs(void);
     void print(void) const;
 };
 

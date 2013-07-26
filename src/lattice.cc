@@ -10,8 +10,8 @@ lattice::lattice(void){
   dimx = 0;
   dimy = 0;
   dimz = 0;
-  size = dimx*dimy*dimz;
-  adjacency = new std::vector<uint>[size];
+  size = 0;
+  adj = new vertex[size];
   type = lattice_t();
 }
 
@@ -20,11 +20,7 @@ lattice::lattice(const lattice& lat) : graph(lat.size){
   dimx = lat.dimx;
   dimy = lat.dimy;
   dimz = lat.dimz;
-  size = lat.size;
   type = lat.type;
-  for (int i=0; i<size; i++){
-    adjacency[i] = lat.adjacency[i];
-  }
 }
 
 lattice::lattice(lattice_t D, uint L, uint M, uint N) : graph(L*M*N*D.size){
@@ -32,7 +28,6 @@ lattice::lattice(lattice_t D, uint L, uint M, uint N) : graph(L*M*N*D.size){
   dimx = L;
   dimy = M;
   dimz = N;
-  size = L*M*N*D.size;
   type = D;
   uint n=0;
   uint connect=0;
@@ -44,11 +39,11 @@ lattice::lattice(lattice_t D, uint L, uint M, uint N) : graph(L*M*N*D.size){
       outx = I[1] + D.geti(I[0],i);
       outy = I[2] + D.getj(I[0],i);
       outz = I[3] + D.getk(I[0],i);
-      if (outx >= 0 && outx < dimx &&
-          outy >= 0 && outy < dimy &&
-          outz >= 0 && outz < dimz){
+      if (outx >= 0 && outx < (int)dimx &&
+          outy >= 0 && outy < (int)dimy &&
+          outz >= 0 && outz < (int)dimz){
         connect = fromCoord(outw, outx, outy, outz);
-        adjacency[n].push_back(connect);
+        adj[n].add(adj+connect);
       }
     }
   }
@@ -60,15 +55,15 @@ lattice::~lattice(void){
 
 // Assignment operator with deep copy of adjacency list
 lattice lattice::operator=(const lattice lat){
-  delete[] adjacency;
+  delete[] adj;
   size = lat.size;
   dimx = lat.dimx;
   dimy = lat.dimy;
   dimz = lat.dimz;
   type = lat.type;
-  adjacency = new std::vector<uint>[size];
+  adj= new vertex[size];
   for (uint i=0; i<size; i++){
-    adjacency[i] = lat.adjacency[i];
+    adj[i] = lat.adj[i];
   }
   return *this;
 }
@@ -82,16 +77,17 @@ uint lattice::fromCoord(int h, int i, int j, int k){
 void lattice::print(void){
   std::cout << type.label << " lattice of size " << dimx << " x " << dimy <<
     " x " << dimz << std::endl;
-/*  int n, from, to;
+  int n, from;
+  vertex* to;
   for (iterator I(type.size, dimx, dimy, dimz); I<size; I++){
     from = I.index();
-    n = adjacency[from].size();
+    n = adj[from].adj.size();
     for (int i=0; i<n; i++){
-      to = adjacency[from][i];
-      std::cout << from << " -> " << to << std::endl;
+      to = adj[from].adj[i];
+      std::cout << from << " -> " << to-adj << std::endl;
     }
     std::cout << std::endl;
-  }*/
+  }
 }
 
 // Nested class for iterating through lattices

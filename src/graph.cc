@@ -6,57 +6,113 @@
 
 #include "heads/graph.h"
 
+// Vertex class
+
+vertex::vertex(void){
+  parent = this;
+  visited = false;
+  distance = -1;
+}
+
+void vertex::add(vertex* v){
+  adj.push_back(v);
+}
+
+void vertex::percolate(double q, gsl_rng* r){
+  // Cycle through edges deleting with probability q
+  vertex* in, *out;
+  uint j;
+  for (uint i=0; i<adj.size(); i++){
+    if (gsl_rng_uniform(r) < q){
+      out = adj[i];
+      adj.erase(adj.begin()+i);
+      i--;
+      // Erase incoming connection
+      j = 0;
+      do{
+        in = out->adj[j];
+        j++;
+      } while (in != this);
+      out->adj.erase(out->adj.begin()+j-1);
+    }
+  }
+}
+
+void vertex::reset(void){
+  parent = this;
+  visited = false;
+  distance = -1;
+}
+
+// Graph class
+
 graph::graph(void){
   size = 0;
-  adjacency = new std::vector<uint>[size];
+  adj = new vertex[size];
 }
 
 graph::graph(uint i){
   size = i;
-  adjacency = new std::vector<uint>[size];
+  adj = new vertex[size];
 }
 
 graph::graph(const graph& G){
   size = G.size;
-  adjacency = new std::vector<uint>[size];
+  adj = new vertex[size];
+  for (uint i=0; i<size; i++){
+    adj[i] = G.adj[i];
+  }
 }
 
 graph::~graph(void){
-  delete[] adjacency;
+  delete[] adj;
 }
 
 graph graph::operator=(graph G){
-  delete[] adjacency;
+  delete[] adj;
   size = G.size;
-  adjacency = new std::vector<uint>[size];
+  adj = new vertex[size];
+  for (uint i=0; i<size; i++){
+    adj[i] = G.adj[i];
+  }
   return *this;
 }
 
 void graph::percolate(double p, uint seed){
   double q = 1-std::sqrt(p);
-  int n, that;
   gsl_rng* r = gsl_rng_alloc(gsl_rng_mt19937);
   gsl_rng_set(r, seed);
   for (uint i=0; i<size; i++){
-    n = adjacency[i].size();
-    for (int j=0; j<n; j++){
-      if (gsl_rng_uniform(r) < q){
-        // Delete edge from this vertex
-        that = adjacency[i][j];
-        adjacency[i].erase(adjacency[i].begin()+j);
-        n--;
-        j--;
-        // Delete edge from that vertex
-        for (uint k=0; k<adjacency[that].size(); k++){
-          if (adjacency[that][k] == i){
-            adjacency[that].erase(adjacency[that].begin()+k);
-            break;
-          }
-        }
+    adj[i].percolate(q, r);
+  }
+  gsl_rng_free(r);
+}
+
+void graph::bfs(void){
+  std::queue<vertex*> Q;
+  // Reset all vertices
+  for (uint i=0; i<size; i++){
+    adj[i].reset();
+  }
+  // Decide on a starting point (need a better way of doing this!)
+  vertex* u, *v = adj;
+  v->parent = v;
+  v->distance = 0;
+  v->visited = true;
+  Q.push(v);
+  while (!Q.empty()){
+    v = Q.front();
+    Q.pop();
+    for (uint i=0; i<v->adj.size(); i++){
+      u = v->adj[i];
+      if (!u->visited){
+        u->parent = v;
+        u->visited = true;
+        u->distance = v->distance+1;
+        Q.push(u);
       }
     }
   }
-  gsl_rng_free(r);
 }
 
 void graph::print(void) const{

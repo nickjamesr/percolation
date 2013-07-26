@@ -9,10 +9,13 @@
 #include "heads/main.h"
 
 int main(int argc, char** argv){
-  lattice L(lattices::raussendorf(), 50, 50, 50);
-  L.print();
+  lattice L(lattices::cubic(),2,3,3);
   L.percolate(0.5);
   L.print();
+  L.bfs();
+  for (uint i=0; i<18; i++){
+    std::cout << L.adj[i].distance << std::endl;
+  }
 
   return 0;
 }

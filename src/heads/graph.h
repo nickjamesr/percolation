@@ -43,7 +43,7 @@ class graph{
     graph operator=(graph);
     // Access methods
     void percolate(double, uint seed=314);
-    void bfs(void);
+    void bfs(vertex*);
     void print(void) const;
 };
 

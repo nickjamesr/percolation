@@ -88,14 +88,14 @@ void graph::percolate(double p, uint seed){
   gsl_rng_free(r);
 }
 
-void graph::bfs(void){
+void graph::bfs(vertex* v){
   std::queue<vertex*> Q;
   // Reset all vertices
   for (uint i=0; i<size; i++){
     adj[i].reset();
   }
   // Decide on a starting point (need a better way of doing this!)
-  vertex* u, *v = adj;
+  vertex* u;
   v->parent = v;
   v->distance = 0;
   v->visited = true;

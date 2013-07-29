@@ -73,13 +73,72 @@ uint lattice::fromCoord(int h, int i, int j, int k){
   return h + type.size*(i + dimx*(j + dimy* k));
 }
 
+vertex* lattice::traverse(void){
+  // Finds the shortest path from the z=0 plane to the z=(dimz-1) plane
+  // Currently takes <any> vertex in unit cell. Really I want just the border
+  // ones
+  std::queue<vertex*> Q;
+  vertex *u, *v;
+  uint pos, closest=-1;
+  for (uint i=0; i<size; i++){
+    adj[i].reset();
+  }
+  for (uint j=0; j<dimy; j++){
+    for (uint i=0; i<dimx; i++){
+      for (uint h=0; h<type.size; h++){
+        pos = fromCoord(h, i, j, 0);
+        v = adj+pos;
+        v->parent = v;
+        v->distance = 0;
+        v->visited = true;
+        Q.push(v);
+      }
+    }
+  }
+  while (!Q.empty()){
+    v = Q.front();
+    Q.pop();
+    for (uint i=0; i<v->adj.size(); i++){
+      u = v->adj[i];
+      if (!u->visited){
+        u->parent = v;
+        u->visited = true;
+        u->distance = v->distance+1;
+        Q.push(u);
+      }
+    }
+  }
+  u = v = adj + fromCoord(0,0,0,dimz-1);
+  for (uint j=0; j<dimy; j++){
+    for (uint i=0; i<dimx; i++){
+      for (uint h=0; h<type.size; h++){
+        pos = fromCoord(h, i, j, dimz-1);
+        u = adj+pos;
+        if (u->distance<closest){
+          closest = u->distance;
+          v = u;
+        }
+      }
+    }
+  }
+  return v;
+}
+
+void lattice::trace(vertex* v){
+  std::cout << v-adj << std::endl;
+  while (v != v->parent){
+    v = v->parent;
+    std::cout << v-adj << std::endl;
+  }
+}
+
 // Currently just a brief summary of the lattice properties
 void lattice::print(void){
   std::cout << type.label << " lattice of size " << dimx << " x " << dimy <<
     " x " << dimz << std::endl;
-  int n, from;
-  vertex* to;
-  for (iterator I(type.size, dimx, dimy, dimz); I<size; I++){
+  //int n, from;
+  //vertex* to;
+  /*for (iterator I(type.size, dimx, dimy, dimz); I<size; I++){
     from = I.index();
     n = adj[from].adj.size();
     for (int i=0; i<n; i++){
@@ -87,7 +146,7 @@ void lattice::print(void){
       std::cout << from << " -> " << to-adj << std::endl;
     }
     std::cout << std::endl;
-  }
+  }*/
 }
 
 // Nested class for iterating through lattices

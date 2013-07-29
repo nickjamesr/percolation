@@ -40,7 +40,7 @@ class graph{
     // Destructor
     ~graph(void);
     // Overloads
-    graph operator=(graph);
+    graph operator=(const graph&);
     // Access methods
     void percolate(double, uint seed=314);
     void bfs(vertex*);

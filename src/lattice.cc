@@ -11,7 +11,6 @@ lattice::lattice(void){
   dimy = 0;
   dimz = 0;
   size = 0;
-  adj = new vertex[size];
   type = lattice_t();
 }
 
@@ -54,16 +53,24 @@ lattice::~lattice(void){
 }
 
 // Assignment operator with deep copy of adjacency list
-lattice lattice::operator=(const lattice lat){
+lattice lattice::operator=(const lattice &lat){
   delete[] adj;
   size = lat.size;
   dimx = lat.dimx;
   dimy = lat.dimy;
   dimz = lat.dimz;
   type = lat.type;
+  vertex *u, *v;
+  uint n;
   adj= new vertex[size];
   for (uint i=0; i<size; i++){
     adj[i] = lat.adj[i];
+    v = &adj[i];
+    n = v->adj.size();
+    for (uint j=0; j<n; j++){
+      u = v->adj[j];
+      v->adj[j] = v+(u-&lat.adj[i]);
+    }
   }
   return *this;
 }
@@ -258,7 +265,7 @@ lattice_t::~lattice_t(void){
   delete[] adjacency;
 }
 
-lattice_t lattice_t::operator=(const lattice_t D){
+lattice_t lattice_t::operator=(const lattice_t &D){
   delete[] adjacency;
   size = D.size;
   adjacency = new std::vector<coord>[size];

@@ -5,5 +5,6 @@
 #define h_main
 
 int main(int, char**);
+int demo(int, char**);
 
 #endif

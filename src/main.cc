@@ -9,6 +9,20 @@
 #include "heads/main.h"
 
 int main(int argc, char** argv){
+  uint x=2,y=2,z=2;
+  int nreps=2;
+  vertex* v;
+  lattice_t c = lattices::cubic();
+  lattice L;
+  lattice M(c,x,y,z);
+  L = M;
+  L.percolate(0.5);
+  //M.percolate(0.5);
+
+  return 0;  
+}
+
+int demo(int argc, char** argv){
   uint x=10,y=10,z=10;
   lattice L(lattices::cubic(),x,y,z); // Creates a lattice of cubic type
                                          // (also allowed are raussendorf and 

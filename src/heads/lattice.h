@@ -35,7 +35,7 @@ class lattice_t{
     // Destructors
     ~lattice_t(void);
     // Overloads
-    lattice_t operator=(const lattice_t);
+    lattice_t operator=(const lattice_t&);
     // Access methods
     void add(uint, int, int, int, int);
     int geth(int h, int n) const{ return adjacency[h][n].h; };
@@ -77,7 +77,7 @@ class lattice: public graph{
     // Destructor
     ~lattice(void);
     // Overloads
-    lattice operator=(const lattice);
+    lattice operator=(const lattice&);
     // Access methods
     vertex* traverse(void);
     void trace(vertex*);

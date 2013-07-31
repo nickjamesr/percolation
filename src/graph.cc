@@ -57,10 +57,22 @@ graph::graph(uint i){
 }
 
 graph::graph(const graph& G){
+  std::cout << "graph copy constructor" << std::endl;
   size = G.size;
   adj = new vertex[size];
+  vertex *u, *v;
+  uint n;
   for (uint i=0; i<size; i++){
-    adj[i] = G.adj[i];
+    // Copy the vertex manually
+    u = adj+i;
+    v = G.adj+i;
+    u->visited = v->visited;
+    u->distance = v->distance;
+    u->parent = u+(v->parent-v);
+    n = v->adj.size();
+    for (uint j=0; j<n; j++){
+      u->add(u+(v->adj[j]-v)); // Retain relative positions
+    }
   }
 }
 
@@ -69,18 +81,22 @@ graph::~graph(void){
 }
 
 graph graph::operator=(const graph &G){
+  std::cout << "graph assignment operator" << std::endl;
   delete[] adj;
   size = G.size;
   adj = new vertex[size];
   vertex *u, *v;
   uint n;
   for (uint i=0; i<size; i++){
-    adj[i] = G.adj[i];
-    v = &adj[i];
+    // Copy the vertex manually
+    u = adj+i;
+    v = G.adj+i;
+    u->visited = v->visited;
+    u->distance = v->distance;
+    u->parent = u+(v->parent-v);
     n = v->adj.size();
     for (uint j=0; j<n; j++){
-      u = v->adj[j];
-      v->adj[j] = v+(u-&G.adj[i]);
+      u->add(u+(v->adj[j]-v)); // Retain relative positions
     }
   }
   return *this;

@@ -9,15 +9,32 @@
 #include "heads/main.h"
 
 int main(int argc, char** argv){
-  uint x=2,y=2,z=2;
-  int nreps=2;
-  vertex* v;
-  lattice_t c = lattices::cubic();
-  lattice L;
-  lattice M(c,x,y,z);
-  L = M;
+  return test(argc, argv);
+}
+
+int test(int argc, char** argv){
+  lattice_t c = lattices::diamond();
+  lattice L(c,2,2,2);
+  L.print();
+  std::cout << "L.percolate" << std::endl;
   L.percolate(0.5);
-  //M.percolate(0.5);
+  return 0;
+}
+
+int run(int argc, char** argv){
+  uint x=2,y=2,z=2;
+  int nreps=1;
+  double p=0.5;
+  vertex* v;
+  lattice_t c = lattices::raussendorf();
+  lattice L;
+
+  for (int i=0; i<nreps; i++){
+    L = lattice(c, x, y, z);
+    L.percolate(p, 314+592*i);
+    v = L.traverse();
+    std::cout << v->distance << std::endl;
+  }
 
   return 0;  
 }

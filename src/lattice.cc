@@ -16,6 +16,7 @@ lattice::lattice(void){
 
 lattice::lattice(const lattice& lat) : graph(lat.size){
   // Copy constructor with deep copy of adjacency list
+  std::cout << "lattice copy constructor" << std::endl;
   dimx = lat.dimx;
   dimy = lat.dimy;
   dimz = lat.dimz;
@@ -54,6 +55,7 @@ lattice::~lattice(void){
 
 // Assignment operator with deep copy of adjacency list
 lattice lattice::operator=(const lattice &lat){
+  std::cout << "lattice copy constructor" << std::endl;
   delete[] adj;
   size = lat.size;
   dimx = lat.dimx;
@@ -143,9 +145,9 @@ void lattice::trace(vertex* v){
 void lattice::print(void){
   std::cout << type.label << " lattice of size " << dimx << " x " << dimy <<
     " x " << dimz << std::endl;
-  //int n, from;
-  //vertex* to;
-  /*for (iterator I(type.size, dimx, dimy, dimz); I<size; I++){
+  int n, from;
+  vertex* to;
+  for (iterator I(type.size, dimx, dimy, dimz); I<size; I++){
     from = I.index();
     n = adj[from].adj.size();
     for (int i=0; i<n; i++){
@@ -153,7 +155,7 @@ void lattice::print(void){
       std::cout << from << " -> " << to-adj << std::endl;
     }
     std::cout << std::endl;
-  }*/
+  }
 }
 
 // Nested class for iterating through lattices
@@ -375,7 +377,7 @@ lattice_t lattices::diamond(void){
   D.add(5,4,1,0,0);
   
   D.add(6,0,1,0,-1);
-  D.add(6,2,0,0,1);
+  D.add(6,2,0,0,-1);
   D.add(6,3,0,0,0);
   D.add(6,4,1,0,0);
   

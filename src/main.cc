@@ -13,11 +13,18 @@ int main(int argc, char** argv){
 }
 
 int test(int argc, char** argv){
-  lattice_t c = lattices::diamond();
-  lattice L(c,2,2,2);
+  lattice_t c = lattices::cubic();
+  lattice L,M;
+
+  L = lattice(c,1,1,2);
   L.print();
-  std::cout << "L.percolate" << std::endl;
-  L.percolate(0.5);
+
+  M = L;
+  M.print();
+
+  lattice N=M;
+  N.print();
+
   return 0;
 }
 

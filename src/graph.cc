@@ -57,7 +57,6 @@ graph::graph(uint i){
 }
 
 graph::graph(const graph& G){
-  std::cout << "graph copy constructor" << std::endl;
   size = G.size;
   adj = new vertex[size];
   vertex *u, *v;
@@ -81,7 +80,6 @@ graph::~graph(void){
 }
 
 graph graph::operator=(const graph &G){
-  std::cout << "graph assignment operator" << std::endl;
   delete[] adj;
   size = G.size;
   adj = new vertex[size];

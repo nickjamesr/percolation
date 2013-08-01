@@ -1,3 +1,0 @@
-* Make vertex class private to lattice.
-* Update copy constructor and assignment operators in lattice to actually copy
-  the relative memory locations

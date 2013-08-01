@@ -16,11 +16,25 @@ lattice::lattice(void){
 
 lattice::lattice(const lattice& lat) : graph(lat.size){
   // Copy constructor with deep copy of adjacency list
-  std::cout << "lattice copy constructor" << std::endl;
   dimx = lat.dimx;
   dimy = lat.dimy;
   dimz = lat.dimz;
   type = lat.type;
+  adj = new vertex[size];
+  vertex *u, *v;
+  uint n;
+  for (uint i=0; i<size; i++){
+    // Copy the vertex manually
+    u = adj+i;
+    v = lat.adj+i;
+    u->visited = v->visited;
+    u->distance = v->distance;
+    u->parent = u+(v->parent-v);
+    n = v->adj.size();
+    for (uint j=0; j<n; j++){
+      u->add(u+(v->adj[j]-v)); // Retain relative positions
+    }
+  }
 }
 
 lattice::lattice(lattice_t D, uint L, uint M, uint N) : graph(L*M*N*D.size){
@@ -55,23 +69,25 @@ lattice::~lattice(void){
 
 // Assignment operator with deep copy of adjacency list
 lattice lattice::operator=(const lattice &lat){
-  std::cout << "lattice copy constructor" << std::endl;
   delete[] adj;
   size = lat.size;
   dimx = lat.dimx;
   dimy = lat.dimy;
   dimz = lat.dimz;
   type = lat.type;
+  adj = new vertex[size];
   vertex *u, *v;
   uint n;
-  adj= new vertex[size];
   for (uint i=0; i<size; i++){
-    adj[i] = lat.adj[i];
-    v = &adj[i];
+    // Copy the vertex manually
+    u = adj+i;
+    v = lat.adj+i;
+    u->visited = v->visited;
+    u->distance = v->distance;
+    u->parent = u+(v->parent-v);
     n = v->adj.size();
     for (uint j=0; j<n; j++){
-      u = v->adj[j];
-      v->adj[j] = v+(u-&lat.adj[i]);
+      u->add(u+(v->adj[j]-v)); // Retain relative positions
     }
   }
   return *this;
@@ -152,9 +168,8 @@ void lattice::print(void){
     n = adj[from].adj.size();
     for (int i=0; i<n; i++){
       to = adj[from].adj[i];
-      std::cout << from << " -> " << to-adj << std::endl;
+      std::cout << from << " -> " << (to-adj) << std::endl;
     }
-    std::cout << std::endl;
   }
 }
 

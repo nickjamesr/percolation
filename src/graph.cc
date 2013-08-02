@@ -8,17 +8,17 @@
 
 // Vertex class
 
-vertex::vertex(void){
+graph::vertex::vertex(void){
   parent = this;
   visited = false;
   distance = -1;
 }
 
-void vertex::add(vertex* v){
+void graph::vertex::add(vertex* v){
   adj.push_back(v);
 }
 
-void vertex::percolate(double q, gsl_rng* r){
+void graph::vertex::percolate(double q, gsl_rng* r){
   // Cycle through edges deleting with probability q
   vertex* in, *out;
   uint j;
@@ -38,7 +38,7 @@ void vertex::percolate(double q, gsl_rng* r){
   }
 }
 
-void vertex::reset(void){
+void graph::vertex::reset(void){
   parent = this;
   visited = false;
   distance = -1;
@@ -110,7 +110,8 @@ void graph::percolate(double p, uint seed){
   gsl_rng_free(r);
 }
 
-void graph::bfs(vertex* v){
+void graph::bfs(uint i){
+  vertex *v=adj+i;
   std::queue<vertex*> Q;
   // Reset all vertices
   for (uint i=0; i<size; i++){
@@ -135,6 +136,14 @@ void graph::bfs(vertex* v){
       }
     }
   }
+}
+
+uint graph::parent(uint i){
+  return (adj[i].parent-adj);
+}
+
+uint graph::distance(uint i){
+  return adj[i].distance;
 }
 
 void graph::print(void) const{

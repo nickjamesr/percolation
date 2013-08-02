@@ -79,8 +79,8 @@ class lattice: public graph{
     // Overloads
     lattice operator=(const lattice&);
     // Access methods
-    vertex* traverse(void);
-    void trace(vertex*);
+    uint traverse(void);
+    void trace(uint);
     void print(void);
 };
 

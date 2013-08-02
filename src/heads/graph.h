@@ -12,25 +12,25 @@
 
 #include <gsl/gsl_rng.h>
 
-class vertex{
-  private:
-  public:
-    vertex* parent;
-    bool visited;
-    uint distance;
-    std::vector<vertex*> adj;
-    // Constructors
-    vertex(void);
-    // Access methods
-    void reset(void);
-    void add(vertex*);
-    void percolate(double, gsl_rng*);
-};
 
 class graph{
   private:
   protected:
     uint size;
+    class vertex{
+      private:
+      public:
+        vertex* parent;
+        bool visited;
+        uint distance;
+        std::vector<vertex*> adj;
+        // Constructors
+        vertex(void);
+        // Access methods
+        void reset(void);
+        void add(vertex*);
+        void percolate(double, gsl_rng*);
+    };
   public:
     vertex* adj;
     // Constructors
@@ -43,7 +43,9 @@ class graph{
     graph operator=(const graph&);
     // Access methods
     void percolate(double, uint seed=314);
-    void bfs(vertex*);
+    void bfs(uint);
+    uint distance(uint);
+    uint parent(uint);
     void print(void) const;
 };
 

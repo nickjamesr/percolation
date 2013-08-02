@@ -98,7 +98,7 @@ uint lattice::fromCoord(int h, int i, int j, int k){
   return h + type.size*(i + dimx*(j + dimy* k));
 }
 
-vertex* lattice::traverse(void){
+uint lattice::traverse(void){
   // Finds the shortest path from the z=0 plane to the z=(dimz-1) plane
   // Currently takes <any> vertex in unit cell. Really I want just the border
   // ones
@@ -146,10 +146,11 @@ vertex* lattice::traverse(void){
       }
     }
   }
-  return v;
+  return v-adj;
 }
 
-void lattice::trace(vertex* v){
+void lattice::trace(uint i){
+  vertex *v = adj+i;
   std::cout << v-adj << std::endl;
   while (v != v->parent){
     v = v->parent;

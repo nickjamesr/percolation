@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <string>
+#include <gsl/gsl_rng.h>
 
 #include "heads/graph.h"
 #include "heads/lattice.h"
@@ -10,29 +11,52 @@
 
 int main(int argc, char** argv){
   return run(argc, argv);
+  //return test(argc, argv);
+}
+
+int test(int argc, char** argv){
+  lattice_t c = lattices::diamond();
+  lattice L;
+  uint dim=2;
+
+  for (uint i=0; i<2; i++){
+    L = lattice(c,dim,dim,dim);
+    L.percolate(0.5);
+  }
+
+  return 0;
 }
 
 int run(int argc, char** argv){
-  uint dim=20;
-  int nreps=20;
-  //double p=0.6;
-  uint v;
-  uint sum=0;
+  gsl_rng* r=gsl_rng_alloc(gsl_rng_mt19937);
+  double p=0.5, progress=0.02;
+  uint v, end=0, dim=6, sum=0;
+  int nreps=100000;
   lattice_t c = lattices::diamond();
   lattice L;
 
-  for (double p=0.4; p<0.6; p+=0.02){
-  sum=0;
   for (int i=0; i<nreps; i++){
-    L = lattice(c,dim,dim,dim);
-    L.percolate(p, 314+592*i);
+    while (i/(double)nreps>progress){
+      std::cout << progress*100 << "%" << std::endl;
+      progress += 0.02;
+    }
+    L = lattice(c,dim,dim,dim+2);
+    L.percolate(p, gsl_rng_get(r));
     v = L.traverse();
-    sum += L.distance(v);
-    //std::cout << L.distance(v) << std::endl;
+    if (L.distance(v)==(uint)-1){
+      end += 1;
+    }
+    else{
+      sum += L.distance(v)-2;
+    }
   }
-  std::cout << p << " " << dim << " " << sum/(double)nreps << std::endl;
-  }
+  std::cout << c.label << " lattice of dimension " << dim << "x" << dim << "x" 
+    << dim << " with probability " << p << std::endl;
+  std::cout << end << "/" << nreps << " failed (" << end/(double)nreps <<
+    ")" << std::endl;
+  std::cout << "Average length: " << sum/(double)(nreps-end) << std::endl;
 
+  gsl_rng_free(r);
   return 0;  
 }
 

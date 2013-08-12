@@ -20,7 +20,7 @@ lattice::lattice(const lattice& lat) : graph(lat.size){
   dimy = lat.dimy;
   dimz = lat.dimz;
   type = lat.type;
-  adj = new vertex[size];
+  //adj = new vertex[size];
   vertex *u, *v;
   uint n;
   for (uint i=0; i<size; i++){

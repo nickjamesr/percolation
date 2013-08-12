@@ -6,7 +6,9 @@ docdir = doc
 utils = .gitignore makefile
 
 cc = g++
-cflags = -c -g -Wall
+dbg =
+opt = -O2
+cflags = -c $(dbg) $(opt) -Wall
 lflags = -lgsl -lgslcblas -lm
 
 objects = $(subst $(srcdir),$(objdir),\

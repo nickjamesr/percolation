@@ -105,22 +105,34 @@ uint lattice::traverse(void){
   std::queue<vertex*> Q;
   vertex *u, *v;
   uint pos, closest=-1;
+  bool end;
+  // Reset all vertices to infinite distance
   for (uint i=0; i<size; i++){
     adj[i].reset();
   }
+  // Mark all starting vertices as distance zero, visited, self-parent
+  // Arrgh - too many nested loops...
   for (uint j=0; j<dimy; j++){
     for (uint i=0; i<dimx; i++){
       for (uint h=0; h<type.size; h++){
-        pos = fromCoord(h, i, j, 0);
-        v = adj+pos;
-        v->parent = v;
-        v->distance = 0;
-        v->visited = true;
-        Q.push(v);
+        for (uint k=0; k<type.adjacency[h].size(); k++){
+          // This ensures that only the vertices with an outgoing connection
+          // in the -z direction are included in the starting list
+          if (type.getk(h, k) == -1){
+            pos = fromCoord(h, i, j, 0);
+            v = adj+pos;
+            v->parent = v;
+            v->distance = 0;
+            v->visited = true;
+            Q.push(v);
+            break;
+          }
+        }
       }
     }
   }
   while (!Q.empty()){
+    // Do the bfs
     v = Q.front();
     Q.pop();
     for (uint i=0; i<v->adj.size(); i++){
@@ -137,9 +149,18 @@ uint lattice::traverse(void){
   for (uint j=0; j<dimy; j++){
     for (uint i=0; i<dimx; i++){
       for (uint h=0; h<type.size; h++){
+        end = false;
+        for (uint k=0; k<type.adjacency[h].size(); k++){
+          // This ensures that only the vertices with an outgoing connection in
+          // the +z direction are considered for the end-point
+          if (type.getk(h, k) == 1){
+            end = true;
+            break;
+          }
+        }
         pos = fromCoord(h, i, j, dimz-1);
         u = adj+pos;
-        if (u->distance<closest){
+        if (u->distance<closest && end){
           closest = u->distance;
           v = u;
         }

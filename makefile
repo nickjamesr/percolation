@@ -9,7 +9,7 @@ cc = g++
 dbg =
 opt = -O2
 cflags = -c $(dbg) $(opt) -Wall
-lflags = -lgsl -lgslcblas -lm
+lflags = -lgsl -lgslcblas -lm -lcurses
 
 objects = $(subst $(srcdir),$(objdir),\
 $(patsubst %.cc,%.o,$(wildcard $(srcdir)/*.cc)))

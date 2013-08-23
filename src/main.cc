@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <gsl/gsl_rng.h>
+#include <curses.h>
 
 #include "heads/graph.h"
 #include "heads/lattice.h"
@@ -15,32 +16,56 @@ int main(int argc, char** argv){
 }
 
 int test(int argc, char** argv){
-  lattice_t c = lattices::diamond();
+  lattice_t c = lattices::raussendorf();
   lattice L;
-  uint dim=2;
+  double p=0.39;
+  uint dim=10, out=0;
 
-  for (uint i=0; i<2; i++){
-    L = lattice(c,dim,dim,dim);
-    L.percolate(0.5);
-  }
+  std::cout << std::endl;
+
+  L = lattice(c,dim,dim,dim);
+  L.percolate(p);
+  out = L.traverse();
+  L.trace(out);
+  std::cout << "distance: " << L.distance(out) << " " << std::endl <<
+    "diamond" << std::endl;
+
+  L = lattice(lattices::diamond(),dim,dim,dim);
+  L.percolate(p);
+  out = L.traverse();
+  L.trace(out);
+  std::cout << "distance: " << L.distance(out) << std::endl;
 
   return 0;
 }
 
 int run(int argc, char** argv){
   gsl_rng* r=gsl_rng_alloc(gsl_rng_mt19937);
-  double p=0.5, progress=0.02;
+  gsl_rng_set(r, 180);
+  double p=0.5;
   uint v, end=0, dim=6, sum=0;
-  int nreps=100000;
+  int progress=2, nreps=1000000;
   lattice_t c = lattices::diamond();
   lattice L;
+  initscr();
+  cbreak();
+  noecho();
+  curs_set(0);
+  printw("[");
+  mvprintw(0,51,"]");
+  addch('0');
+  addch('%');
+  refresh();
 
   for (int i=0; i<nreps; i++){
-    while (i/(double)nreps>progress){
-      std::cout << progress*100 << "%" << std::endl;
-      progress += 0.02;
+    while (100*i/(double)nreps>progress){
+      mvprintw(0,progress/2,"#");
+      mvprintw(0,52,"%d",progress);
+      addch('%');
+      progress += 2;
+      refresh();
     }
-    L = lattice(c,dim,dim,dim+2);
+    L = lattice(c,dim,dim,dim);
     L.percolate(p, gsl_rng_get(r));
     v = L.traverse();
     if (L.distance(v)==(uint)-1){
@@ -50,6 +75,7 @@ int run(int argc, char** argv){
       sum += L.distance(v)-2;
     }
   }
+  endwin();
   std::cout << c.label << " lattice of dimension " << dim << "x" << dim << "x" 
     << dim << " with probability " << p << std::endl;
   std::cout << end << "/" << nreps << " failed (" << end/(double)nreps <<

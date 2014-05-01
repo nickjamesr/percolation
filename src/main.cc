@@ -11,42 +11,45 @@
 #include "heads/main.h"
 
 int main(int argc, char** argv){
-  return run(argc, argv);
-  //return test(argc, argv);
+  //return run(argc, argv);
+  return test(argc, argv);
+  //return demo(argc, argv);
 }
 
 int test(int argc, char** argv){
-  lattice_t c = lattices::raussendorf();
+  lattice_t c = lattices::diamond();
   lattice L;
-  double p=0.39;
-  uint dim=10, out=0;
-
-  std::cout << std::endl;
-
+  uint dim=2, seed=314;
+  double p=0.6;
+  if (argc>1){
+    p=atof(argv[1]);
+  }
   L = lattice(c,dim,dim,dim);
-  L.percolate(p);
-  out = L.traverse();
-  L.trace(out);
-  std::cout << "distance: " << L.distance(out) << " " << std::endl <<
-    "diamond" << std::endl;
-
-  L = lattice(lattices::diamond(),dim,dim,dim);
-  L.percolate(p);
-  out = L.traverse();
-  L.trace(out);
-  std::cout << "distance: " << L.distance(out) << std::endl;
+  L.percolate(p, seed);
+  for (uint i=0; i<32; i++){
+    L.bfs(i,0,i+1);
+    L.bfs(i,1,i+1);
+    L.bfs(i,2,i+1);
+  }
+  L.print();
 
   return 0;
 }
 
 int run(int argc, char** argv){
   gsl_rng* r=gsl_rng_alloc(gsl_rng_mt19937);
-  gsl_rng_set(r, 180);
-  double p=0.5;
+  uint seed=314;
+  if (argc>1){
+    seed=atoi(argv[1]);
+  }
+  gsl_rng_set(r, seed);
+  double p=0.45;
   uint v, end=0, dim=6, sum=0;
-  int progress=2, nreps=1000000;
+  int progress=2, nreps=100000;
   lattice_t c = lattices::diamond();
   lattice L;
+
+  // Set up curses stuff for progress bar
   initscr();
   cbreak();
   noecho();
@@ -67,7 +70,7 @@ int run(int argc, char** argv){
     }
     L = lattice(c,dim,dim,dim);
     L.percolate(p, gsl_rng_get(r));
-    v = L.traverse();
+    v = L.traverse_y();
     if (L.distance(v)==(uint)-1){
       end += 1;
     }
@@ -76,9 +79,11 @@ int run(int argc, char** argv){
     }
   }
   endwin();
+
   std::cout << c.label << " lattice of dimension " << dim << "x" << dim << "x" 
     << dim << " with probability " << p << std::endl;
-  std::cout << end << "/" << nreps << " failed (" << end/(double)nreps <<
+  std::cout << end << "/" << nreps << " failed (" <<
+    end/(double)nreps <<
     ")" << std::endl;
   std::cout << "Average length: " << sum/(double)(nreps-end) << std::endl;
 

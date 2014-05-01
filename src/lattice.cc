@@ -99,9 +99,158 @@ uint lattice::fromCoord(int h, int i, int j, int k){
 }
 
 uint lattice::traverse(void){
+  uint t_x = traverse_x();
+  uint t_y = traverse_y();
+  uint t_z = traverse_z();
+  return std::max(t_x, std::max(t_y, t_z));
+}
+
+uint lattice::traverse_x(void){
+  // Finds the shortest path from the x=0 plane to the x=(dimx-1) plane
+  std::queue<vertex*> Q;
+  vertex *u, *v;
+  uint pos, closest=-1;
+  bool end;
+  // Reset all vertices to infinite distance
+  for (uint i=0; i<size; i++){
+    adj[i].reset();
+  }
+  // Mark all starting vertices as distance zero, visited, self-parent
+  // Arrgh - too many nested loops...
+  for (uint k=0; k<dimz; k++){
+    for (uint j=0; j<dimy; j++){
+      for (uint h=0; h<type.size; h++){
+        for (uint i=0; i<type.adjacency[h].size(); i++){
+          // This ensures that only the vertices with an outgoing connection
+          // in the -x direction are included in the starting list
+          if (type.geti(h, i) == -1){
+            pos = fromCoord(h, 0, j, k);
+            v = adj+pos;
+            v->parent = v;
+            v->distance = 0;
+            v->visited = true;
+            Q.push(v);
+            break;
+          }
+        }
+      }
+    }
+  }
+  while (!Q.empty()){
+    // Do the bfs
+    v = Q.front();
+    Q.pop();
+    for (uint i=0; i<v->adj.size(); i++){
+      u = v->adj[i];
+      if (!u->visited){
+        u->parent = v;
+        u->visited = true;
+        u->distance = v->distance+1;
+        Q.push(u);
+      }
+    }
+  }
+  u = v = adj + fromCoord(0,dimx-1,0,0);
+  for (uint k=0; k<dimz; k++){
+    for (uint j=0; j<dimy; j++){
+      for (uint h=0; h<type.size; h++){
+        end = false;
+        for (uint i=0; i<type.adjacency[h].size(); i++){
+          // This ensures that only the vertices with an outgoing connection in
+          // the +z direction are considered for the end-point
+          if (type.geti(h, i) == 1){
+            end = true;
+            break;
+          }
+        }
+        if (end){
+          pos = fromCoord(h, dimx-1, j, k);
+          u = adj+pos;
+          if (u->distance<closest && end){
+            closest = u->distance;
+            v = u;
+          }
+        }
+      }
+    }
+  }
+  return v-adj;
+}
+
+uint lattice::traverse_y(void){
+  // Finds the shortest path from the y=0 plane to the y=(dimy-1) plane
+  std::queue<vertex*> Q;
+  vertex *u, *v;
+  uint pos, closest=-1;
+  bool end;
+  // Reset all vertices to infinite distance
+  for (uint i=0; i<size; i++){
+    adj[i].reset();
+  }
+  // Mark all starting vertices as distance zero, visited, self-parent
+  // Arrgh - too many nested loops...
+  for (uint k=0; k<dimz; k++){
+    for (uint i=0; i<dimx; i++){
+      for (uint h=0; h<type.size; h++){
+        for (uint j=0; j<type.adjacency[h].size(); j++){
+          // This ensures that only the vertices with an outgoing connection
+          // in the -z direction are included in the starting list
+          if (type.getj(h, j) == -1){
+            pos = fromCoord(h, i, 0, k);
+            v = adj+pos;
+            v->parent = v;
+            v->distance = 0;
+            v->visited = true;
+            Q.push(v);
+            break;
+          }
+        }
+      }
+    }
+  }
+  while (!Q.empty()){
+    // Do the bfs
+    v = Q.front();
+    Q.pop();
+    for (uint i=0; i<v->adj.size(); i++){
+      u = v->adj[i];
+      if (!u->visited){
+        u->parent = v;
+        u->visited = true;
+        u->distance = v->distance+1;
+        Q.push(u);
+      }
+    }
+  }
+  u = v = adj + fromCoord(0,0,dimy-1,0);
+  for (uint k=0; k<dimz; k++){
+    for (uint i=0; i<dimx; i++){
+      for (uint h=0; h<type.size; h++){
+        end = false;
+        for (uint j=0; j<type.adjacency[h].size(); j++){
+          // This ensures that only the vertices with an outgoing connection in
+          // the +z direction are considered for the end-point
+          if (type.getj(h, j) == 1){
+            end = true;
+            break;
+          }
+        }
+        if (end){
+          pos = fromCoord(h, i, dimy-1, k);
+          u = adj+pos;
+          if (u->distance<closest && end){
+            closest = u->distance;
+            v = u;
+          }
+        }
+      }
+    }
+  }
+  return v-adj;
+}
+
+uint lattice::traverse_z(void){
   // Finds the shortest path from the z=0 plane to the z=(dimz-1) plane
-  // Currently takes <any> vertex in unit cell. Really I want just the border
-  // ones
   std::queue<vertex*> Q;
   vertex *u, *v;
   uint pos, closest=-1;
@@ -158,11 +307,13 @@ uint lattice::traverse(void){
             break;
           }
         }
-        pos = fromCoord(h, i, j, dimz-1);
-        u = adj+pos;
-        if (u->distance<closest && end){
-          closest = u->distance;
-          v = u;
+        if (end){
+          pos = fromCoord(h, i, j, dimz-1);
+          u = adj+pos;
+          if (u->distance<closest && end){
+            closest = u->distance;
+            v = u;
+          }
         }
       }
     }
@@ -183,15 +334,11 @@ void lattice::trace(uint i){
 void lattice::print(void){
   std::cout << type.label << " lattice of size " << dimx << " x " << dimy <<
     " x " << dimz << std::endl;
-  int n, from;
-  vertex* to;
+  int v;
   for (iterator I(type.size, dimx, dimy, dimz); I<size; I++){
-    from = I.index();
-    n = adj[from].adj.size();
-    for (int i=0; i<n; i++){
-      to = adj[from].adj[i];
-      std::cout << from << " -> " << (to-adj) << std::endl;
-    }
+    v = I.index();
+    std::cout << adj[v].clusterid[0] << "," << adj[v].clusterid[1] << "," <<
+      adj[v].clusterid[2] << std::endl;
   }
 }
 

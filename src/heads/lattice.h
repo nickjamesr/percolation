@@ -38,6 +38,8 @@ class lattice_t{
     lattice_t operator=(const lattice_t&);
     // Access methods
     void add(uint, int, int, int, int);
+    // The following 4 methods get n-th outgoing connection from h-th vertex in
+    // the unit cell, in each of the 4 directions.
     int geth(int h, int n) const{ return adjacency[h][n].h; };
     int geti(int h, int n) const{ return adjacency[h][n].i; };
     int getj(int h, int n) const{ return adjacency[h][n].j; };
@@ -80,6 +82,9 @@ class lattice: public graph{
     lattice operator=(const lattice&);
     // Access methods
     uint traverse(void);
+    uint traverse_x(void);
+    uint traverse_y(void);
+    uint traverse_z(void);
     void trace(uint);
     void print(void);
 };

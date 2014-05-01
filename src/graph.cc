@@ -12,6 +12,7 @@ graph::vertex::vertex(void){
   parent = this;
   visited = false;
   distance = -1;
+  clusterid[0]=clusterid[1]=clusterid[2]=0;
 }
 
 void graph::vertex::add(vertex* v){
@@ -42,6 +43,7 @@ void graph::vertex::reset(void){
   parent = this;
   visited = false;
   distance = -1;
+  clusterid[0]=clusterid[1]=clusterid[2]=0;
 }
 
 // Graph class
@@ -100,6 +102,14 @@ graph graph::operator=(const graph &G){
   return *this;
 }
 
+void graph::reset(){
+  vertex *v;
+  for (uint i=0; i<size; i++){
+    v=adj+i;
+    v->reset();
+  }
+}
+
 void graph::percolate(double p, uint seed){
   double q = 1-std::sqrt(p);
   gsl_rng* r = gsl_rng_alloc(gsl_rng_mt19937);
@@ -110,18 +120,22 @@ void graph::percolate(double p, uint seed){
   gsl_rng_free(r);
 }
 
-void graph::bfs(uint i){
-  vertex *v=adj+i;
+void graph::bfs(uint start, uint dir, uint id){
+/* Breadth-first search over graph, starting from the vertex with index start
+ * and labelling in direction dir with number id
+ * start : index of starting vertex
+ * dir   : direction (0,1 or 2) This affects which value in the clusterid is
+ *         changed
+ * id    : id to use for this connected component
+ */
+  vertex *v=adj+start, *u;
   std::queue<vertex*> Q;
-  // Reset all vertices
-  for (uint i=0; i<size; i++){
-    adj[i].reset();
-  }
-  // Decide on a starting point (need a better way of doing this!)
-  vertex* u;
+  if (v->visited)
+    return; // Already visited on a previous bfs
   v->parent = v;
   v->distance = 0;
   v->visited = true;
+  v->clusterid[dir]=id;
   Q.push(v);
   while (!Q.empty()){
     v = Q.front();
@@ -132,6 +146,7 @@ void graph::bfs(uint i){
         u->parent = v;
         u->visited = true;
         u->distance = v->distance+1;
+        u->clusterid[dir]=id;
         Q.push(u);
       }
     }

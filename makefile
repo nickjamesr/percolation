@@ -8,7 +8,7 @@ utils = .gitignore makefile
 cc = g++
 dbg =
 opt = -O2
-cflags = -c $(dbg) $(opt) -Wall
+cflags = -c $(dbg) $(opt) -Wall --std=c++11
 lflags = -lgsl -lgslcblas -lm -lcurses
 
 objects = $(subst $(srcdir),$(objdir),\

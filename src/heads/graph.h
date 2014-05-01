@@ -12,7 +12,6 @@
 
 #include <gsl/gsl_rng.h>
 
-
 class graph{
   private:
   protected:
@@ -21,6 +20,7 @@ class graph{
       private:
       public:
         vertex* parent;
+        uint clusterid[3];
         bool visited;
         uint distance;
         std::vector<vertex*> adj;
@@ -42,8 +42,9 @@ class graph{
     // Overloads
     graph operator=(const graph&);
     // Access methods
+    void reset();
     void percolate(double, uint seed=314);
-    void bfs(uint);
+    void bfs(uint, uint, uint);
     uint distance(uint);
     uint parent(uint);
     void print(void) const;

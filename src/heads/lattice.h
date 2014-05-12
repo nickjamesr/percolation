@@ -27,6 +27,7 @@ class lattice_t{
     // Attributes
     uint size;
     std::vector<coord>* adjacency;
+    std::vector<uint> startx, starty, startz, endx, endy, endz;
     std::string label;
     // Constructors
     lattice_t(void);
@@ -80,12 +81,10 @@ class lattice: public graph{
     ~lattice(void);
     // Overloads
     lattice operator=(const lattice&);
+    // BFS-type stuff
+    void traverse();
+    std::vector<uint> findCrossings();
     // Access methods
-    uint traverse(void);
-    uint traverse_x(void);
-    uint traverse_y(void);
-    uint traverse_z(void);
-    void trace(uint);
     void print(void);
 };
 

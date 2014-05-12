@@ -9,10 +9,12 @@
 // Vertex class
 
 graph::vertex::vertex(void){
-  parent = this;
-  visited = false;
-  distance = -1;
-  clusterid[0]=clusterid[1]=clusterid[2]=0;
+  for (uint i=0; i<6; i++){
+    parent[i] = this;
+    visited[i] = false;
+    distance[i] = -1;
+    clusterid[i] = 0;
+  }
 }
 
 void graph::vertex::add(vertex* v){
@@ -40,10 +42,12 @@ void graph::vertex::percolate(double q, gsl_rng* r){
 }
 
 void graph::vertex::reset(void){
-  parent = this;
-  visited = false;
-  distance = -1;
-  clusterid[0]=clusterid[1]=clusterid[2]=0;
+  for (uint i=0; i<6; i++){
+    parent[i] = this;
+    visited[i] = false;
+    distance[i] = -1;
+    clusterid[i] = 0;
+  }
 }
 
 // Graph class
@@ -67,9 +71,12 @@ graph::graph(const graph& G){
     // Copy the vertex manually
     u = adj+i;
     v = G.adj+i;
-    u->visited = v->visited;
-    u->distance = v->distance;
-    u->parent = u+(v->parent-v);
+    for (uint i=0; i<6; i++){
+      u->visited[i] = v->visited[i];
+      u->distance[i] = v->distance[i];
+      u->parent[i] = u+(v->parent[i]-v);
+      u->clusterid[i] = v->clusterid[i];
+    }
     n = v->adj.size();
     for (uint j=0; j<n; j++){
       u->add(u+(v->adj[j]-v)); // Retain relative positions
@@ -91,9 +98,12 @@ graph graph::operator=(const graph &G){
     // Copy the vertex manually
     u = adj+i;
     v = G.adj+i;
-    u->visited = v->visited;
-    u->distance = v->distance;
-    u->parent = u+(v->parent-v);
+    for (uint i=0; i<6; i++){
+      u->visited[i] = v->visited[i];
+      u->distance[i] = v->distance[i];
+      u->parent[i] = u+(v->parent[i]-v);
+      u->clusterid[i] = v->clusterid[i];
+    }
     n = v->adj.size();
     for (uint j=0; j<n; j++){
       u->add(u+(v->adj[j]-v)); // Retain relative positions
@@ -124,17 +134,17 @@ void graph::bfs(uint start, uint dir, uint id){
 /* Breadth-first search over graph, starting from the vertex with index start
  * and labelling in direction dir with number id
  * start : index of starting vertex
- * dir   : direction (0,1 or 2) This affects which value in the clusterid is
- *         changed
+ * dir   : direction (0,1,...,5) This affects which values to update in
+ *         clusterid, visited and distance. Naive support for directionality
  * id    : id to use for this connected component
  */
   vertex *v=adj+start, *u;
   std::queue<vertex*> Q;
-  if (v->visited)
+  if (v->visited[dir])
     return; // Already visited on a previous bfs
-  v->parent = v;
-  v->distance = 0;
-  v->visited = true;
+  v->parent[dir] = v;
+  v->distance[dir] = 0;
+  v->visited[dir] = true;
   v->clusterid[dir]=id;
   Q.push(v);
   while (!Q.empty()){
@@ -142,10 +152,10 @@ void graph::bfs(uint start, uint dir, uint id){
     Q.pop();
     for (uint i=0; i<v->adj.size(); i++){
       u = v->adj[i];
-      if (!u->visited){
-        u->parent = v;
-        u->visited = true;
-        u->distance = v->distance+1;
+      if (!u->visited[dir]){
+        u->parent[dir] = v;
+        u->visited[dir] = true;
+        u->distance[dir] = v->distance[dir]+1;
         u->clusterid[dir]=id;
         Q.push(u);
       }
@@ -153,12 +163,12 @@ void graph::bfs(uint start, uint dir, uint id){
   }
 }
 
-uint graph::parent(uint i){
-  return (adj[i].parent-adj);
+uint graph::parent(uint i, uint dir){
+  return (adj[i].parent[dir]-adj);
 }
 
-uint graph::distance(uint i){
-  return adj[i].distance;
+uint graph::distance(uint i, uint dir){
+  return (adj[i].distance)[dir];
 }
 
 void graph::print(void) const{

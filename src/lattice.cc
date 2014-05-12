@@ -27,9 +27,12 @@ lattice::lattice(const lattice& lat) : graph(lat.size){
     // Copy the vertex manually
     u = adj+i;
     v = lat.adj+i;
-    u->visited = v->visited;
-    u->distance = v->distance;
-    u->parent = u+(v->parent-v);
+    for (uint j=0; j<3; j++){
+      u->visited[j] = v->visited[j];
+      u->distance[j] = v->distance[j];
+      u->parent[j] = u+(v->parent[j]-v);
+      u->clusterid[j] = v->clusterid[j];
+    }
     n = v->adj.size();
     for (uint j=0; j<n; j++){
       u->add(u+(v->adj[j]-v)); // Retain relative positions
@@ -82,9 +85,12 @@ lattice lattice::operator=(const lattice &lat){
     // Copy the vertex manually
     u = adj+i;
     v = lat.adj+i;
-    u->visited = v->visited;
-    u->distance = v->distance;
-    u->parent = u+(v->parent-v);
+    for (uint j=0; j<3; j++){
+      u->visited[j] = v->visited[j];
+      u->distance[j] = v->distance[j];
+      u->parent[j] = u+(v->parent[j]-v);
+      u->clusterid[j]=v->clusterid[j];
+    }
     n = v->adj.size();
     for (uint j=0; j<n; j++){
       u->add(u+(v->adj[j]-v)); // Retain relative positions
@@ -98,236 +104,158 @@ uint lattice::fromCoord(int h, int i, int j, int k){
   return h + type.size*(i + dimx*(j + dimy* k));
 }
 
-uint lattice::traverse(void){
-  uint t_x = traverse_x();
-  uint t_y = traverse_y();
-  uint t_z = traverse_z();
-  return std::max(t_x, std::max(t_y, t_z));
+// BFS-type stuff
+void lattice::traverse(){
+/* Find the connected clusters of the lattice by doing successive traverses in
+ * the positive and negative x, y and z directions.
+ * After running, each vertex in the lattice will have 6 indices (one for each
+ * direction) indicating which clusters it is in.
+ * More processing is required to find which (if any) of these are crossing
+ * clusters
+ */
+  uint i,j,k,idx;
+
+// +x direction
+  i=0;
+  idx=1;
+  for (k=0; k<dimz; k++){
+    for (j=0; j<dimy; j++){
+      for (auto h : type.startx){
+        bfs(fromCoord(h,i,j,k),0,idx);
+        idx++;
+      }
+    }
+  }
+
+// +y direction
+  j=0;
+  idx=1;
+  for (k=0; k<dimz; k++){
+    for (i=0; i<dimx; i++){
+      for (auto h : type.starty){
+        bfs(fromCoord(h,i,j,k),1,idx);
+        idx++;
+      }
+    }
+  }
+
+// +z direction
+  k=0;
+  idx=1;
+  for (j=0; j<dimy; j++){
+    for (i=0; i<dimx; i++){
+      for (auto h : type.startz){
+        bfs(fromCoord(h,i,j,k),2,idx);
+        idx++;
+      }
+    }
+  }
+
+// -x direction
+  i=dimx-1;
+  idx=1;
+  for (k=0; k<dimz; k++){
+    for (j=0; j<dimy; j++){
+      for (auto h : type.endx){
+        bfs(fromCoord(h,i,j,k),3,idx);
+        idx++;
+      }
+    }
+  }
+
+// -y direction
+  j=dimy-1;
+  idx=1;
+  for (k=0; k<dimz; k++){
+    for (i=0; i<dimx; i++){
+      for (auto h : type.endy){
+        bfs(fromCoord(h,i,j,k),4,idx);
+        idx++;
+      }
+    }
+  }
+
+// -z direction
+  k=dimz-1;
+  idx=1;
+  for (j=0; j<dimy; j++){
+    for (i=0; i<dimx; i++){
+      for (auto h : type.endz){
+        bfs(fromCoord(h,i,j,k),5,idx);
+        idx++;
+      }
+    }
+  }
 }
 
-uint lattice::traverse_x(void){
-  // Finds the shortest path from the x=0 plane to the x=(dimx-1) plane
-  std::queue<vertex*> Q;
-  vertex *u, *v;
-  uint pos, closest=-1;
-  bool end;
-  // Reset all vertices to infinite distance
+std::vector<uint> lattice::findCrossings(){
+  uint size=-1;
+  std::vector<uint> minsizes(7,(uint)-1);
+  vertex *v;
   for (uint i=0; i<size; i++){
-    adj[i].reset();
-  }
-  // Mark all starting vertices as distance zero, visited, self-parent
-  // Arrgh - too many nested loops...
-  for (uint k=0; k<dimz; k++){
-    for (uint j=0; j<dimy; j++){
-      for (uint h=0; h<type.size; h++){
-        for (uint i=0; i<type.adjacency[h].size(); i++){
-          // This ensures that only the vertices with an outgoing connection
-          // in the -x direction are included in the starting list
-          if (type.geti(h, i) == -1){
-            pos = fromCoord(h, 0, j, k);
-            v = adj+pos;
-            v->parent = v;
-            v->distance = 0;
-            v->visited = true;
-            Q.push(v);
-            break;
-          }
-        }
+    v=adj+i;
+    if (v->distance[0]!=(uint)-1 && v->distance[3]!=(uint)-1){
+      // Find x size
+      size = v->distance[0]+v->distance[3];
+      if (size < minsizes[0]){
+        minsizes[0]=size;
+      }
+    }
+    if (v->distance[1]!=(uint)-1 && v->distance[4]!=(uint)-1){
+      // Find y size
+      size = v->distance[1]+v->distance[4];
+      if (size < minsizes[1]){
+        minsizes[1]=size;
+      }
+    }
+    if (v->distance[2]!=(uint)-1 && v->distance[5]!=(uint)-1){
+      // Find z size
+      size = v->distance[2]+v->distance[5];
+      if (size < minsizes[2]){
+        minsizes[2]=size;
+      }
+    }
+    if (v->distance[0]!=(uint)-1 && v->distance[1]!=(uint)-1 &&
+        v->distance[3]!=(uint)-1 && v->distance[4]!=(uint)-1){
+      // Find xy size 
+      size = v->distance[0]+v->distance[1]+v->distance[3]+v->distance[4];
+      if (size < minsizes[3]){
+        minsizes[3]=size;
+      }
+    }
+    if (v->distance[1]!=(uint)-1 && v->distance[2]!=(uint)-1 &&
+        v->distance[4]!=(uint)-1 && v->distance[5]!=(uint)-1){
+      // Find yz size 
+      size = v->distance[1]+v->distance[2]+v->distance[4]+v->distance[5];
+      if (size < minsizes[4]){
+        minsizes[4]=size;
+      }
+    }
+    if (v->distance[0]!=(uint)-1 && v->distance[2]!=(uint)-1 &&
+        v->distance[3]!=(uint)-1 && v->distance[5]!=(uint)-1){
+      // Find zx size 
+      size = v->distance[0]+v->distance[2]+v->distance[3]+v->distance[5];
+      if (size < minsizes[5]){
+        minsizes[5]=size;
+      }
+    }
+    if (v->distance[0]!=(uint)-1 && v->distance[1]!=(uint)-1 &&
+        v->distance[2]!=(uint)-1 && v->distance[3]!=(uint)-1 &&
+        v->distance[4]!=(uint)-1 && v->distance[5]!=(uint)-1){
+      // Find xyz size
+      size = v->distance[0]+v->distance[1]+v->distance[2]+
+             v->distance[3]+v->distance[4]+v->distance[5];
+      if (size < minsizes[6]){
+        minsizes[6]=size;
       }
     }
   }
-  while (!Q.empty()){
-    // Do the bfs
-    v = Q.front();
-    Q.pop();
-    for (uint i=0; i<v->adj.size(); i++){
-      u = v->adj[i];
-      if (!u->visited){
-        u->parent = v;
-        u->visited = true;
-        u->distance = v->distance+1;
-        Q.push(u);
-      }
+  for (uint i=0; i<7; i++){
+    if (minsizes[i] != (uint)-1){
+      minsizes[i]++;
     }
   }
-  u = v = adj + fromCoord(0,dimx-1,0,0);
-  for (uint k=0; k<dimz; k++){
-    for (uint j=0; j<dimy; j++){
-      for (uint h=0; h<type.size; h++){
-        end = false;
-        for (uint i=0; i<type.adjacency[h].size(); i++){
-          // This ensures that only the vertices with an outgoing connection in
-          // the +z direction are considered for the end-point
-          if (type.geti(h, i) == 1){
-            end = true;
-            break;
-          }
-        }
-        if (end){
-          pos = fromCoord(h, dimx-1, j, k);
-          u = adj+pos;
-          if (u->distance<closest && end){
-            closest = u->distance;
-            v = u;
-          }
-        }
-      }
-    }
-  }
-  return v-adj;
-}
-
-uint lattice::traverse_y(void){
-  // Finds the shortest path from the y=0 plane to the y=(dimy-1) plane
-  std::queue<vertex*> Q;
-  vertex *u, *v;
-  uint pos, closest=-1;
-  bool end;
-  // Reset all vertices to infinite distance
-  for (uint i=0; i<size; i++){
-    adj[i].reset();
-  }
-  // Mark all starting vertices as distance zero, visited, self-parent
-  // Arrgh - too many nested loops...
-  for (uint k=0; k<dimz; k++){
-    for (uint i=0; i<dimx; i++){
-      for (uint h=0; h<type.size; h++){
-        for (uint j=0; j<type.adjacency[h].size(); j++){
-          // This ensures that only the vertices with an outgoing connection
-          // in the -z direction are included in the starting list
-          if (type.getj(h, j) == -1){
-            pos = fromCoord(h, i, 0, k);
-            v = adj+pos;
-            v->parent = v;
-            v->distance = 0;
-            v->visited = true;
-            Q.push(v);
-            break;
-          }
-        }
-      }
-    }
-  }
-  while (!Q.empty()){
-    // Do the bfs
-    v = Q.front();
-    Q.pop();
-    for (uint i=0; i<v->adj.size(); i++){
-      u = v->adj[i];
-      if (!u->visited){
-        u->parent = v;
-        u->visited = true;
-        u->distance = v->distance+1;
-        Q.push(u);
-      }
-    }
-  }
-  u = v = adj + fromCoord(0,0,dimy-1,0);
-  for (uint k=0; k<dimz; k++){
-    for (uint i=0; i<dimx; i++){
-      for (uint h=0; h<type.size; h++){
-        end = false;
-        for (uint j=0; j<type.adjacency[h].size(); j++){
-          // This ensures that only the vertices with an outgoing connection in
-          // the +z direction are considered for the end-point
-          if (type.getj(h, j) == 1){
-            end = true;
-            break;
-          }
-        }
-        if (end){
-          pos = fromCoord(h, i, dimy-1, k);
-          u = adj+pos;
-          if (u->distance<closest && end){
-            closest = u->distance;
-            v = u;
-          }
-        }
-      }
-    }
-  }
-  return v-adj;
-}
-
-uint lattice::traverse_z(void){
-  // Finds the shortest path from the z=0 plane to the z=(dimz-1) plane
-  std::queue<vertex*> Q;
-  vertex *u, *v;
-  uint pos, closest=-1;
-  bool end;
-  // Reset all vertices to infinite distance
-  for (uint i=0; i<size; i++){
-    adj[i].reset();
-  }
-  // Mark all starting vertices as distance zero, visited, self-parent
-  // Arrgh - too many nested loops...
-  for (uint j=0; j<dimy; j++){
-    for (uint i=0; i<dimx; i++){
-      for (uint h=0; h<type.size; h++){
-        for (uint k=0; k<type.adjacency[h].size(); k++){
-          // This ensures that only the vertices with an outgoing connection
-          // in the -z direction are included in the starting list
-          if (type.getk(h, k) == -1){
-            pos = fromCoord(h, i, j, 0);
-            v = adj+pos;
-            v->parent = v;
-            v->distance = 0;
-            v->visited = true;
-            Q.push(v);
-            break;
-          }
-        }
-      }
-    }
-  }
-  while (!Q.empty()){
-    // Do the bfs
-    v = Q.front();
-    Q.pop();
-    for (uint i=0; i<v->adj.size(); i++){
-      u = v->adj[i];
-      if (!u->visited){
-        u->parent = v;
-        u->visited = true;
-        u->distance = v->distance+1;
-        Q.push(u);
-      }
-    }
-  }
-  u = v = adj + fromCoord(0,0,0,dimz-1);
-  for (uint j=0; j<dimy; j++){
-    for (uint i=0; i<dimx; i++){
-      for (uint h=0; h<type.size; h++){
-        end = false;
-        for (uint k=0; k<type.adjacency[h].size(); k++){
-          // This ensures that only the vertices with an outgoing connection in
-          // the +z direction are considered for the end-point
-          if (type.getk(h, k) == 1){
-            end = true;
-            break;
-          }
-        }
-        if (end){
-          pos = fromCoord(h, i, j, dimz-1);
-          u = adj+pos;
-          if (u->distance<closest && end){
-            closest = u->distance;
-            v = u;
-          }
-        }
-      }
-    }
-  }
-  return v-adj;
-}
-
-void lattice::trace(uint i){
-  vertex *v = adj+i;
-  std::cout << v-adj << std::endl;
-  while (v != v->parent){
-    v = v->parent;
-    std::cout << v-adj << std::endl;
-  }
+  return minsizes;
 }
 
 // Currently just a brief summary of the lattice properties
@@ -337,8 +265,11 @@ void lattice::print(void){
   int v;
   for (iterator I(type.size, dimx, dimy, dimz); I<size; I++){
     v = I.index();
-    std::cout << adj[v].clusterid[0] << "," << adj[v].clusterid[1] << "," <<
-      adj[v].clusterid[2] << std::endl;
+    std::cout << v << ": (" << adj[v].clusterid[0];
+    for (uint i=1; i<6; i++){
+      std::cout << "," << adj[v].clusterid[i];
+    }
+    std::cout << ")" << std::endl;
   }
 }
 
@@ -438,6 +369,12 @@ lattice_t::lattice_t(const lattice_t& D){
   for (uint i=0; i<size; i++){
     adjacency[i] = D.adjacency[i];
   }
+  startx=D.startx;
+  starty=D.starty;
+  startz=D.startz;
+  endx=D.endx;
+  endy=D.endy;
+  endz=D.endz;
   label = D.label;
 }
 
@@ -458,6 +395,12 @@ lattice_t lattice_t::operator=(const lattice_t &D){
   for (uint i=0; i<size; i++){
     adjacency[i] = D.adjacency[i];
   }
+  startx=D.startx;
+  starty=D.starty;
+  startz=D.startz;
+  endx=D.endx;
+  endy=D.endy;
+  endz=D.endz;
   label = D.label;
   return *this;
 }
@@ -491,6 +434,12 @@ lattice_t lattices::cubic(void){
   D.add(0,0,0,+1,0);
   D.add(0,0,0,0,-1);
   D.add(0,0,0,0,+1);
+  D.startx.push_back(0);
+  D.starty.push_back(0);
+  D.startz.push_back(0);
+  D.endx.push_back(0);
+  D.endy.push_back(0);
+  D.endz.push_back(0);
   return D;
 }
 
@@ -500,31 +449,43 @@ lattice_t lattices::raussendorf(void){
   D.add(0,5,0,0,0);
   D.add(0,1,0,-1,0);
   D.add(0,5,0,0,-1);
+  D.starty.push_back(0);
+  D.startz.push_back(0);
 
   D.add(1,2,0,0,0);
   D.add(1,0,0,0,0);
   D.add(1,2,-1,0,0);
   D.add(1,0,0,1,0);
+  D.startx.push_back(1);
+  D.endy.push_back(1);
 
   D.add(2,3,0,0,0);
   D.add(2,1,0,0,0);
   D.add(2,3,0,0,-1);
   D.add(2,1,1,0,0);
+  D.startz.push_back(2);
+  D.endx.push_back(2);
 
   D.add(3,4,0,0,0);
   D.add(3,2,0,0,0);
   D.add(3,4,0,1,0);
   D.add(3,2,0,0,1);
+  D.endy.push_back(3);
+  D.endz.push_back(3);
 
   D.add(4,5,0,0,0);
   D.add(4,3,0,0,0);
   D.add(4,5,1,0,0);
   D.add(4,3,0,-1,0);
+  D.starty.push_back(4);
+  D.endx.push_back(4);
 
   D.add(5,0,0,0,0);
   D.add(5,4,0,0,0);
   D.add(5,0,0,0,1);
   D.add(5,4,-1,0,0);
+  D.startx.push_back(5);
+  D.endz.push_back(5);
   return D;
 }
 
@@ -534,6 +495,9 @@ lattice_t lattices::diamond(void){
   D.add(0,5,-1,1,0);
   D.add(0,6,-1,0,1);
   D.add(0,7,0,1,1);
+  D.startx.push_back(0);
+  D.endy.push_back(0);
+  D.endz.push_back(0);
 
   D.add(1,0,0,0,0);
   D.add(1,2,0,0,0);
@@ -544,31 +508,40 @@ lattice_t lattices::diamond(void){
   D.add(2,5,0,0,0);
   D.add(2,6,0,0,1);
   D.add(2,7,0,0,1);
+  D.endz.push_back(2);
 
   D.add(3,1,0,0,0);
   D.add(3,5,0,1,0);
   D.add(3,6,0,0,0);
   D.add(3,7,0,1,0);
+  D.endy.push_back(3);
 
   D.add(4,1,0,0,0);
   D.add(4,5,-1,0,0);
   D.add(4,6,-1,0,0);
   D.add(4,7,0,0,0);
+  D.startx.push_back(4);
 
   D.add(5,0,1,-1,0);
   D.add(5,2,0,0,0);
   D.add(5,3,0,-1,0);
   D.add(5,4,1,0,0);
+  D.starty.push_back(5);
+  D.endx.push_back(5);
   
   D.add(6,0,1,0,-1);
   D.add(6,2,0,0,-1);
   D.add(6,3,0,0,0);
   D.add(6,4,1,0,0);
+  D.startz.push_back(6);
+  D.endx.push_back(6);
   
   D.add(7,0,0,-1,-1);
   D.add(7,2,0,0,-1);
   D.add(7,3,0,-1,0);
   D.add(7,4,0,0,0);
+  D.starty.push_back(7);
+  D.startz.push_back(7);
   return D;
 }
 

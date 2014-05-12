@@ -19,10 +19,10 @@ class graph{
     class vertex{
       private:
       public:
-        vertex* parent;
-        uint clusterid[3];
-        bool visited;
-        uint distance;
+        vertex* parent[6];
+        uint clusterid[6];
+        bool visited[6];
+        uint distance[6];
         std::vector<vertex*> adj;
         // Constructors
         vertex(void);
@@ -45,8 +45,8 @@ class graph{
     void reset();
     void percolate(double, uint seed=314);
     void bfs(uint, uint, uint);
-    uint distance(uint);
-    uint parent(uint);
+    uint distance(uint, uint dir=0);
+    uint parent(uint, uint dir=0);
     void print(void) const;
 };
 

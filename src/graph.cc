@@ -60,6 +60,7 @@ graph::graph(void){
 graph::graph(uint i){
   size = i;
   adj = new vertex[size];
+  reset();
 }
 
 graph::graph(const graph& G){
@@ -138,7 +139,7 @@ void graph::bfs(uint start, uint dir, uint id){
  *         clusterid, visited and distance. Naive support for directionality
  * id    : id to use for this connected component
  */
-  vertex *v=adj+start, *u;
+  vertex *v=adj+start;
   std::queue<vertex*> Q;
   if (v->visited[dir])
     return; // Already visited on a previous bfs
@@ -147,9 +148,21 @@ void graph::bfs(uint start, uint dir, uint id){
   v->visited[dir] = true;
   v->clusterid[dir]=id;
   Q.push(v);
-  while (!Q.empty()){
-    v = Q.front();
-    Q.pop();
+  bfs(&Q, dir, id);
+}
+
+void graph::bfs(std::queue<vertex*> *Q, uint dir, uint id){
+/* Breadth-first search over graph, starting from queued vertices
+ * and labelling in direction dir with number id
+ * Q    : Initially queued vertices
+ * dir  : direction (0,1,...,5) This affects which values to update in
+ *        clusterid, visited and distance. Naive support for directionality
+ * id   : id to use for this connected component
+ */
+  vertex *v, *u;
+  while (!Q->empty()){
+    v = Q->front();
+    Q->pop();
     for (uint i=0; i<v->adj.size(); i++){
       u = v->adj[i];
       if (!u->visited[dir]){
@@ -157,7 +170,7 @@ void graph::bfs(uint start, uint dir, uint id){
         u->visited[dir] = true;
         u->distance[dir] = v->distance[dir]+1;
         u->clusterid[dir]=id;
-        Q.push(u);
+        Q->push(u);
       }
     }
   }

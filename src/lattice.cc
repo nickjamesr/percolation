@@ -27,7 +27,7 @@ lattice::lattice(const lattice& lat) : graph(lat.size){
     // Copy the vertex manually
     u = adj+i;
     v = lat.adj+i;
-    for (uint j=0; j<3; j++){
+    for (uint j=0; j<6; j++){
       u->visited[j] = v->visited[j];
       u->distance[j] = v->distance[j];
       u->parent[j] = u+(v->parent[j]-v);
@@ -85,7 +85,7 @@ lattice lattice::operator=(const lattice &lat){
     // Copy the vertex manually
     u = adj+i;
     v = lat.adj+i;
-    for (uint j=0; j<3; j++){
+    for (uint j=0; j<6; j++){
       u->visited[j] = v->visited[j];
       u->distance[j] = v->distance[j];
       u->parent[j] = u+(v->parent[j]-v);
@@ -114,6 +114,8 @@ void lattice::traverse(){
  * clusters
  */
   uint i,j,k,idx;
+  std::queue<vertex*> Q;
+  vertex *v;
 
 // +x direction
   i=0;
@@ -121,11 +123,17 @@ void lattice::traverse(){
   for (k=0; k<dimz; k++){
     for (j=0; j<dimy; j++){
       for (auto h : type.startx){
-        bfs(fromCoord(h,i,j,k),0,idx);
-        idx++;
+        idx=fromCoord(h,i,j,k);
+        v=adj+idx;
+        v->parent[0]=v;
+        v->distance[0]=0;
+        v->visited[0]=true;
+        v->clusterid[0]=0;
+        Q.push(adj+idx);
       }
     }
   }
+  bfs(&Q, 0);
 
 // +y direction
   j=0;
@@ -133,11 +141,17 @@ void lattice::traverse(){
   for (k=0; k<dimz; k++){
     for (i=0; i<dimx; i++){
       for (auto h : type.starty){
-        bfs(fromCoord(h,i,j,k),1,idx);
-        idx++;
+        idx=fromCoord(h,i,j,k);
+        v=adj+idx;
+        v->parent[1]=v;
+        v->distance[1]=0;
+        v->visited[1]=true;
+        v->clusterid[1]=0;
+        Q.push(adj+idx);
       }
     }
   }
+  bfs(&Q, 1);
 
 // +z direction
   k=0;
@@ -145,11 +159,17 @@ void lattice::traverse(){
   for (j=0; j<dimy; j++){
     for (i=0; i<dimx; i++){
       for (auto h : type.startz){
-        bfs(fromCoord(h,i,j,k),2,idx);
-        idx++;
+        idx=fromCoord(h,i,j,k);
+        v=adj+idx;
+        v->parent[2]=v;
+        v->distance[2]=0;
+        v->visited[2]=true;
+        v->clusterid[2]=0;
+        Q.push(adj+idx);
       }
     }
   }
+  bfs(&Q, 2);
 
 // -x direction
   i=dimx-1;
@@ -157,11 +177,17 @@ void lattice::traverse(){
   for (k=0; k<dimz; k++){
     for (j=0; j<dimy; j++){
       for (auto h : type.endx){
-        bfs(fromCoord(h,i,j,k),3,idx);
-        idx++;
+        idx=fromCoord(h,i,j,k);
+        v=adj+idx;
+        v->parent[3]=v;
+        v->distance[3]=0;
+        v->visited[3]=true;
+        v->clusterid[3]=0;
+        Q.push(adj+idx);
       }
     }
   }
+  bfs(&Q, 3);
 
 // -y direction
   j=dimy-1;
@@ -169,11 +195,17 @@ void lattice::traverse(){
   for (k=0; k<dimz; k++){
     for (i=0; i<dimx; i++){
       for (auto h : type.endy){
-        bfs(fromCoord(h,i,j,k),4,idx);
-        idx++;
+        idx=fromCoord(h,i,j,k);
+        v=adj+idx;
+        v->parent[4]=v;
+        v->distance[4]=0;
+        v->visited[4]=true;
+        v->clusterid[4]=0;
+        Q.push(adj+idx);
       }
     }
   }
+  bfs(&Q, 4);
 
 // -z direction
   k=dimz-1;
@@ -181,72 +213,78 @@ void lattice::traverse(){
   for (j=0; j<dimy; j++){
     for (i=0; i<dimx; i++){
       for (auto h : type.endz){
-        bfs(fromCoord(h,i,j,k),5,idx);
-        idx++;
+        idx=fromCoord(h,i,j,k);
+        v=adj+idx;
+        v->parent[5]=v;
+        v->distance[5]=0;
+        v->visited[5]=true;
+        v->clusterid[5]=0;
+        Q.push(adj+idx);
       }
     }
   }
+  bfs(&Q, 5);
 }
 
 std::vector<uint> lattice::findCrossings(){
-  uint size=-1;
+  uint len=-1;
   std::vector<uint> minsizes(7,(uint)-1);
   vertex *v;
   for (uint i=0; i<size; i++){
     v=adj+i;
     if (v->distance[0]!=(uint)-1 && v->distance[3]!=(uint)-1){
       // Find x size
-      size = v->distance[0]+v->distance[3];
-      if (size < minsizes[0]){
-        minsizes[0]=size;
+      len  = v->distance[0]+v->distance[3];
+      if (len < minsizes[0]){
+        minsizes[0]=len;
       }
     }
     if (v->distance[1]!=(uint)-1 && v->distance[4]!=(uint)-1){
       // Find y size
-      size = v->distance[1]+v->distance[4];
-      if (size < minsizes[1]){
-        minsizes[1]=size;
+      len  = v->distance[1]+v->distance[4];
+      if (len < minsizes[1]){
+        minsizes[1]=len;
       }
     }
     if (v->distance[2]!=(uint)-1 && v->distance[5]!=(uint)-1){
       // Find z size
-      size = v->distance[2]+v->distance[5];
-      if (size < minsizes[2]){
-        minsizes[2]=size;
+      len  = v->distance[2]+v->distance[5];
+      if (len < minsizes[2]){
+        minsizes[2]=len;
       }
     }
     if (v->distance[0]!=(uint)-1 && v->distance[1]!=(uint)-1 &&
         v->distance[3]!=(uint)-1 && v->distance[4]!=(uint)-1){
       // Find xy size 
-      size = v->distance[0]+v->distance[1]+v->distance[3]+v->distance[4];
-      if (size < minsizes[3]){
-        minsizes[3]=size;
+      len  = v->distance[0]+v->distance[1]+v->distance[3]+v->distance[4];
+      if (len < minsizes[3]){
+        minsizes[3]=len;
       }
     }
     if (v->distance[1]!=(uint)-1 && v->distance[2]!=(uint)-1 &&
         v->distance[4]!=(uint)-1 && v->distance[5]!=(uint)-1){
       // Find yz size 
-      size = v->distance[1]+v->distance[2]+v->distance[4]+v->distance[5];
-      if (size < minsizes[4]){
-        minsizes[4]=size;
+      len  = v->distance[1]+v->distance[2]+v->distance[4]+v->distance[5];
+      if (len < minsizes[4]){
+        minsizes[4]=len;
       }
     }
     if (v->distance[0]!=(uint)-1 && v->distance[2]!=(uint)-1 &&
         v->distance[3]!=(uint)-1 && v->distance[5]!=(uint)-1){
       // Find zx size 
-      size = v->distance[0]+v->distance[2]+v->distance[3]+v->distance[5];
-      if (size < minsizes[5]){
-        minsizes[5]=size;
+      len  = v->distance[0]+v->distance[2]+v->distance[3]+v->distance[5];
+      if (len < minsizes[5]){
+        minsizes[5]=len;
       }
     }
     if (v->distance[0]!=(uint)-1 && v->distance[1]!=(uint)-1 &&
         v->distance[2]!=(uint)-1 && v->distance[3]!=(uint)-1 &&
         v->distance[4]!=(uint)-1 && v->distance[5]!=(uint)-1){
       // Find xyz size
-      size = v->distance[0]+v->distance[1]+v->distance[2]+
+      len  = v->distance[0]+v->distance[1]+v->distance[2]+
              v->distance[3]+v->distance[4]+v->distance[5];
-      if (size < minsizes[6]){
-        minsizes[6]=size;
+      if (len < minsizes[6]){
+        minsizes[6]=len;
       }
     }
   }
@@ -265,9 +303,9 @@ void lattice::print(void){
   int v;
   for (iterator I(type.size, dimx, dimy, dimz); I<size; I++){
     v = I.index();
-    std::cout << v << ": (" << adj[v].clusterid[0];
+    std::cout << v << ": (" << adj[v].distance[0];
     for (uint i=1; i<6; i++){
-      std::cout << "," << adj[v].clusterid[i];
+      std::cout << "," << adj[v].distance[i];
     }
     std::cout << ")" << std::endl;
   }

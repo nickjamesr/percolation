@@ -3,5 +3,7 @@
 *.dat
 *.swp
 *.log
+*.gp
+
 obj/*
 bin/*

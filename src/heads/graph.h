@@ -44,7 +44,8 @@ class graph{
     // Access methods
     void reset();
     void percolate(double, uint seed=314);
-    void bfs(uint, uint, uint);
+    void bfs(uint, uint, uint id=0);
+    void bfs(std::queue<vertex*>*, uint, uint id=0);
     uint distance(uint, uint dir=0);
     uint parent(uint, uint dir=0);
     void print(void) const;

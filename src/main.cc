@@ -16,6 +16,15 @@ int main(int argc, char** argv){
 }
 
 int test(int argc, char** argv){
+  lattice_t c = lattices::cubic();
+  uint dim=2;
+  lattice L(c, dim, dim, dim);
+  L.bfs((uint)0, 0);
+  L.print();
+  return 0;
+}
+
+int run(int argc, char** argv){
   lattice_t c = lattices::diamond();
   lattice L;
   uint nreps=5000, dim=8, seed=314,
@@ -25,7 +34,7 @@ int test(int argc, char** argv){
   double pmin=0.2, pmax=0.6, pincr=0.005,
     mean1d, mean2d, mean3d, p1d, p2d, p3d;
   std::vector<uint> minsizes;
-  std::ofstream fout("scratch.dat");
+  std::ofstream fout("out.dat");
   gsl_rng *r=gsl_rng_alloc(gsl_rng_mt19937);
 
   if (argc>1){
@@ -33,13 +42,15 @@ int test(int argc, char** argv){
   }
   gsl_rng_set(r, seed);
 
-  std::cout << "# " << dim << "x" << dim << "x" << dim << " lattice" <<
-    std::endl;
+  std::cout << "# " << dim << "x" << dim << "x" << dim << " " << c.label <<
+    " lattice" << std::endl;
+  std::cout << "# " << nreps << " trials per point" << std::endl;
   std::cout << "# " << "seed " << seed << std::endl;
   std::cout << "# p p_x1d p_x2d p_x3d <l_1d> <l_2d> <l_3d>" << std::endl;
 
-  fout << "# " << dim << "x" << dim << "x" << dim << " lattice" <<
-    std::endl;
+  fout << "# " << dim << "x" << dim << "x" << dim << " " << c.label << 
+    " lattice" << std::endl;
+  fout << "# " << nreps << " trials per point" << std::endl;
   fout << "# " << "seed " << seed << std::endl;
   fout << "# p p_x1d p_x2d p_x3d <l_1d> <l_2d> <l_3d>" << std::endl;
 

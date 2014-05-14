@@ -7,6 +7,5 @@
 int main(int, char**);
 int test(int, char**);
 int run(int, char**);
-int demo(int, char**);
 
 #endif

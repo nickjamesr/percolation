@@ -1,12 +1,17 @@
-// lattice.cc
-// lattice and lattice_t classes, plus some definitions for lattice types
-// - Derived from graph
-// - Contains information about the unit cell and heigh, width, depth of lattice
+/* lattice.cc
+ * lattice and lattice_t classes, plus some definitions for lattice types
+ * - Derived from graph
+ * - Contains information about the unit cell and height, width, depth of
+ *   lattice
+ */
 
 # include "heads/lattice.h"
 
+//--------------------LATTICE METHODS-----------------------------------------//
+
 lattice::lattice(void){
-  // Empty constructor (never really used but I think it's necessary)
+/* Empty constructor
+ */
   dimx = 0;
   dimy = 0;
   dimz = 0;
@@ -52,10 +57,14 @@ lattice::lattice(lattice_t D, uint L, uint M, uint N) : graph(L*M*N*D.size){
   for (iterator I(D.size, dimx, dimy, dimz); I<size; I++){
     n = I.index();
     for (uint i=0; i<D.adjacency[I[0]].size(); i++){
-      outw = D.geth(I[0],i);
-      outx = I[1] + D.geti(I[0],i);
-      outy = I[2] + D.getj(I[0],i);
-      outz = I[3] + D.getk(I[0],i);
+      outw = D.adjacency[I[0]][i].h;
+      outx = I[1] + D.adjacency[I[0]][i].i;
+      outy = I[2] + D.adjacency[I[0]][i].j;
+      outz = I[3] + D.adjacency[I[0]][i].k;
+      //outw = D.geth(I[0],i);
+      //outx = I[1] + D.geti(I[0],i);
+      //outy = I[2] + D.getj(I[0],i);
+      //outz = I[3] + D.getk(I[0],i);
       if (outx >= 0 && outx < (int)dimx &&
           outy >= 0 && outy < (int)dimy &&
           outz >= 0 && outz < (int)dimz){
@@ -97,11 +106,6 @@ lattice lattice::operator=(const lattice &lat){
     }
   }
   return *this;
-}
-
-// Helper function for converting 4-position into global index
-uint lattice::fromCoord(int h, int i, int j, int k){
-  return h + type.size*(i + dimx*(j + dimy* k));
 }
 
 // BFS-type stuff
@@ -311,14 +315,20 @@ void lattice::print(void){
   }
 }
 
-// Nested class for iterating through lattices
+//--------------------ITERATOR METHODS----------------------------------------//
 lattice::iterator::iterator(){
+/* Empty constructor.
+ * Initialise iterator for a lattice of size zero, current position zero.
+ */
   size[0] = size[1] = size[2] = size[3] = 0;
   n = 0;
   coord[0] = coord[1] = coord[2] = coord[3] = 0;
 }
 
 lattice::iterator::iterator(uint dimw, uint dimx, uint dimy, uint dimz){
+/* Construct with maximum size dimw x dimx x dimy x dimz.
+ * Initialise state to zeroth element
+ */
   size[0] = dimw;
   size[1] = dimx;
   size[2] = dimy;
@@ -328,6 +338,8 @@ lattice::iterator::iterator(uint dimw, uint dimx, uint dimy, uint dimz){
 }
 
 void lattice::iterator::operator++(int){
+/* Incrementor
+ */
   n++;
   if (coord[0]<size[0]-1){
     coord[0]++;
@@ -377,23 +389,7 @@ bool lattice::iterator::operator>=(uint i) const{
   return (n>=i);
 }
 
-
-
-// lattice_t methods
-
-lattice_t::coord::coord(int hh, int ii, int jj, int kk){
-  h = hh;
-  i = ii;
-  j = jj;
-  k = kk;
-}
-
-lattice_t::coord::coord(const lattice_t::coord& C){
-  h = C.h;
-  i = C.i;
-  j = C.j;
-  k = C.k;
-}
+//--------------------LATTICE_T METHODS---------------------------------------//
 
 lattice_t::lattice_t(void){
   size = 0;

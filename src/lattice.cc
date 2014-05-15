@@ -20,7 +20,9 @@ lattice::lattice(void){
 }
 
 lattice::lattice(const lattice& lat) : graph(lat.size){
-  // Copy constructor with deep copy of adjacency list
+/* Copy constructor with deep copy of adjacency list
+ * lat : lattice to copy
+ */
   dimx = lat.dimx;
   dimy = lat.dimy;
   dimz = lat.dimz;
@@ -46,25 +48,26 @@ lattice::lattice(const lattice& lat) : graph(lat.size){
 }
 
 lattice::lattice(lattice_t D, uint L, uint M, uint N) : graph(L*M*N*D.size){
-  // Constructs an LxMxN lattice from the unit cell D
+/* Constructor
+ * Generates an LxMxN lattice from the unit cell D
+ * L,M,N : dimensions of lattice
+ * D     : lattice_t object describing unit cell
+ */
   dimx = L;
   dimy = M;
   dimz = N;
   type = D;
   uint n=0;
   uint connect=0;
-  int outw, outx, outy, outz;
+  int outw, outx, outy, outz, w,x,y,z;
   for (iterator I(D.size, dimx, dimy, dimz); I<size; I++){
+    w=I[0]; x=I[1]; y=I[2]; z=I[3];
     n = I.index();
-    for (uint i=0; i<D.adjacency[I[0]].size(); i++){
-      outw = D.adjacency[I[0]][i].h;
-      outx = I[1] + D.adjacency[I[0]][i].i;
-      outy = I[2] + D.adjacency[I[0]][i].j;
-      outz = I[3] + D.adjacency[I[0]][i].k;
-      //outw = D.geth(I[0],i);
-      //outx = I[1] + D.geti(I[0],i);
-      //outy = I[2] + D.getj(I[0],i);
-      //outz = I[3] + D.getk(I[0],i);
+    for (uint i=0; i<D.adjacency[w].size(); i++){
+      outw = D.adjacency[w][i].h;
+      outx = x + D.adjacency[w][i].i;
+      outy = y + D.adjacency[w][i].j;
+      outz = z + D.adjacency[w][i].k;
       if (outx >= 0 && outx < (int)dimx &&
           outy >= 0 && outy < (int)dimy &&
           outz >= 0 && outz < (int)dimz){
@@ -75,12 +78,15 @@ lattice::lattice(lattice_t D, uint L, uint M, uint N) : graph(L*M*N*D.size){
   }
 }
 
-// Desctructor
 lattice::~lattice(void){
+/* Destructor. Empty because all dynamic memory is freed by graph destructor
+ */
 }
 
-// Assignment operator with deep copy of adjacency list
 lattice lattice::operator=(const lattice &lat){
+/* Assignment operator with deep copy of adjacency list
+ * lat : lattice to copy
+ */
   delete[] adj;
   size = lat.size;
   dimx = lat.dimx;
@@ -231,6 +237,15 @@ void lattice::traverse(){
 }
 
 std::vector<uint> lattice::findCrossings(){
+/* Find the size of the smallest crossing clusters.
+ * Returns a vector of 7 uints
+ * The first 3 are the sizes of the 1D crossing clusters in the x,y and z
+ * directions (respectively)
+ * The next 3 are the sizes of the 2D crossing clusters in the xy, yz and zx
+ * planes (respectively)
+ * The final element is the size of the 3D crossing cluster
+ * A value of (uint)(-1) indicates that no crossing cluster exists
+ */
   uint len=-1;
   std::vector<uint> minsizes(7,(uint)-1);
   vertex *v;
@@ -300,18 +315,18 @@ std::vector<uint> lattice::findCrossings(){
   return minsizes;
 }
 
-// Currently just a brief summary of the lattice properties
 void lattice::print(void){
+/* Print summary of the lattice to cout
+ */
   std::cout << type.label << " lattice of size " << dimx << " x " << dimy <<
     " x " << dimz << std::endl;
-  int v;
+  vertex* v;
   for (iterator I(type.size, dimx, dimy, dimz); I<size; I++){
-    v = I.index();
-    std::cout << v << ": (" << adj[v].distance[0];
-    for (uint i=1; i<6; i++){
-      std::cout << "," << adj[v].distance[i];
+    v = adj+I.index();
+    for (auto u : v->adj){
+      std::cout << v-adj << " -> " << u-adj << std::endl;
     }
-    std::cout << ")" << std::endl;
+    std::cout << std::endl;
   }
 }
 
@@ -338,7 +353,7 @@ lattice::iterator::iterator(uint dimw, uint dimx, uint dimy, uint dimz){
 }
 
 void lattice::iterator::operator++(int){
-/* Incrementor
+/* Incrementor (cyclic)
  */
   n++;
   if (coord[0]<size[0]-1){
@@ -360,11 +375,15 @@ void lattice::iterator::operator++(int){
     coord[3]++;
   }
   else{
+    // Loop back to beginning
     coord[0] = coord[1] = coord[2] = coord[3] = 0;
   }
 }
 
 uint lattice::iterator::operator[](uint i) const{
+/* Access elements of the 4-coordinate of current position
+ * i : index of coordinate to return
+ */
   if (i<4){
     return coord[i];
   }
@@ -374,30 +393,52 @@ uint lattice::iterator::operator[](uint i) const{
 }
 
 bool lattice::iterator::operator<(uint i) const{
+/* Compare magnitude
+ * i : Comparison
+ * returns true if 1D index of iterator is less than i
+ */
   return (n<i);
 }
 
 bool lattice::iterator::operator>(uint i) const{
+/* Compare magnitude
+ * i : Comparison
+ * returns true if 1D index of iterator is greater than i
+ */
   return (n>i);
 }
 
 bool lattice::iterator::operator<=(uint i) const{
+/* Compare magnitude
+ * i : Comparison
+ * returns true if 1D index of iterator is less than or equal to i
+ */
   return (n<=i);
 }
 
 bool lattice::iterator::operator>=(uint i) const{
+/* Compare magnitude
+ * i : Comparison
+ * returns true if 1D index of iterator is greater than or equal to i
+ */
   return (n>=i);
 }
 
 //--------------------LATTICE_T METHODS---------------------------------------//
 
 lattice_t::lattice_t(void){
+/* Empty constructor
+ * Create a new lattice type with 0 vertices in unit cell, no adjacency
+ */
   size = 0;
   adjacency = new std::vector<coord>[size];
   label = "null";
 }
 
 lattice_t::lattice_t(const lattice_t& D){
+/* Copy constructor
+ * D : lattice_t object to copy
+ */
   size = D.size;
   adjacency = new std::vector<coord>[size];
   for (uint i=0; i<size; i++){
@@ -413,16 +454,26 @@ lattice_t::lattice_t(const lattice_t& D){
 }
 
 lattice_t::lattice_t(uint n, std::string s){
+/* New constructor. Creates a new unit cell with n vertices but no adjacency
+ * n : number of vertices in unit cell
+ * s : text label
+ */
   size = n;
   adjacency = new std::vector<coord>[size];
   label = s;
 }
 
 lattice_t::~lattice_t(void){
+/* Destructor. Free dynamic memory used for adjacency list
+ */
   delete[] adjacency;
 }
 
 lattice_t lattice_t::operator=(const lattice_t &D){
+/* Assignment operator.
+ * D : lattice_t to copy
+ * return self
+ */
   delete[] adjacency;
   size = D.size;
   adjacency = new std::vector<coord>[size];
@@ -440,11 +491,20 @@ lattice_t lattice_t::operator=(const lattice_t &D){
 }
 
 void lattice_t::add(uint start, int h, int i, int j, int k){
+/* Add new connection to unit cell
+ * start : vertex to start on
+ * h     : absolute internal coordinate of target vertex
+ * i     : relative x coordinate of target vertex
+ * j     : relative y coordinate of target vertex
+ * k     : relative z coordinate of target vertex
+ */
   lattice_t::coord C(h,i,j,k);
   adjacency[start].push_back(C);
 }
 
 void lattice_t::print(void){
+/* Print summary of unit cell to cout
+ */
   std::cout << label << " lattice\n" << "unit cell of size " << size <<
     " with the following connections:" << std::endl;
   for (uint i=0; i<size; i++){
@@ -458,9 +518,11 @@ void lattice_t::print(void){
   }
 }
 
-// Generator functions
+//--------------------GENERATOR FUNCTIONS-------------------------------------//
 
 lattice_t lattices::cubic(void){
+/* Unit cell for cubic lattice
+ */
   lattice_t D(1, "cubic");
   D.add(0,0,-1,0,0);
   D.add(0,0,+1,0,0);
@@ -478,6 +540,8 @@ lattice_t lattices::cubic(void){
 }
 
 lattice_t lattices::raussendorf(void){
+/* Unit cell for raussendorf lattice
+ */
   lattice_t D(6, "raussendorf");
   D.add(0,1,0,0,0);
   D.add(0,5,0,0,0);
@@ -524,6 +588,8 @@ lattice_t lattices::raussendorf(void){
 }
 
 lattice_t lattices::diamond(void){
+/* Unit cell for diamond lattice
+ */
   lattice_t D(8, "diamond");
   D.add(0,1,0,0,0);
   D.add(0,5,-1,1,0);
@@ -576,6 +642,70 @@ lattice_t lattices::diamond(void){
   D.add(7,4,0,0,0);
   D.starty.push_back(7);
   D.startz.push_back(7);
+  return D;
+}
+
+lattice_t lattices::diamond_grid(void){
+/* Alternative unit cell for diamond lattice. Fits on square grid. Courtesy of
+ * Mercedes
+ */
+  lattice_t D(8, "diamond (grid)");
+  D.add(0,1,0,0,0);
+  D.add(0,5,0,0,0);
+  D.add(0,5,-1,0,0);
+  D.add(0,6,0,-1,0);
+  D.startx.push_back(0);
+  D.starty.push_back(0);
+
+  D.add(1,0,0,0,0);
+  D.add(1,2,0,0,0);
+  D.add(1,2,0,0,0);
+  D.add(1,7,-1,0,0);
+  D.startx.push_back(1);
+
+  D.add(2,1,0,0,0);
+  D.add(2,3,0,0,0);
+  D.add(2,3,-1,0,0);
+  D.add(2,6,0,0,1);
+  D.startx.push_back(2);
+  D.endz.push_back(2);
+  
+  D.add(3,2,0,0,0);
+  D.add(3,4,0,0,0);
+  D.add(3,2,1,0,0);
+  D.add(3,7,0,1,0);
+  D.endx.push_back(3);
+  D.endy.push_back(3);
+
+  D.add(4,3,0,0,0);
+  D.add(4,5,0,0,0);
+  D.add(4,6,0,0,0);
+  D.add(4,6,1,0,0);
+  D.endx.push_back(4);
+
+  D.add(5,0,0,0,0);
+  D.add(5,4,0,0,0);
+  D.add(5,0,1,0,0);
+  D.add(5,7,0,0,-1);
+  D.endx.push_back(5);
+  D.startz.push_back(5);
+
+  D.add(6,4,0,0,0);
+  D.add(6,0,0,1,0);
+  D.add(6,2,0,0,-1);
+  D.add(6,4,-1,0,0);
+  D.startx.push_back(6);
+  D.startz.push_back(6);
+  D.endy.push_back(6);
+
+  D.add(7,1,0,0,0);
+  D.add(7,1,1,0,0);
+  D.add(7,3,0,-1,0);
+  D.add(7,5,0,0,1);
+  D.starty.push_back(7);
+  D.endx.push_back(7);
+  D.endz.push_back(7);
+
   return D;
 }
 

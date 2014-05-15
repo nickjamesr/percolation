@@ -17,7 +17,7 @@ int main(int argc, char** argv){
 
 int test(int argc, char** argv){
   lattice_t c = lattices::cubic();
-  uint dim=2;
+  uint dim=3;
   lattice L(c, dim, dim, dim);
   L.bfs((uint)0, 0);
   L.print();

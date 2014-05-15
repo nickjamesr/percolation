@@ -23,7 +23,7 @@ class lattice_t{
         coord(){h=i=j=k=0;};        // Empty constructor. Initialise to zero.
         coord(int w, int x, int y, int z){h=w; i=x; j=y; k=z;};
                                     // Constructor with specified 4-vector.
-        coord(const coord& C){h=C.h; i=C.i; j=C.j; k=C.j;};
+        coord(const coord& C){h=C.h; i=C.i; j=C.j; k=C.k;};
                                     // Copy constructor.
         int h;  // Internal to unit cell
         int i;  // In x direction
@@ -37,18 +37,20 @@ class lattice_t{
     std::vector<coord>* adjacency;
                           // Connections out of unit cell
     std::vector<uint> startx, starty, startz, endx, endy, endz;
-    std::string label;
-    // Constructors
-    lattice_t(void);
-    lattice_t(const lattice_t&);
-    lattice_t(uint, std::string);
-    // Destructors
-    ~lattice_t(void);
-    // Overloads
-    lattice_t operator=(const lattice_t&);
+                          // Starting (finishing) vertices for crossing clusters
+    std::string label;    // Name of the unit cell
+    lattice_t(void);      // Empty constructor
+    lattice_t(const lattice_t& D);
+                          // Copy constructor
+    lattice_t(uint n, std::string s);
+                          // New constructor
+    ~lattice_t(void);     // Destructor
+    lattice_t operator=(const lattice_t& D);
+                          // Assignment operator
     // Access methods
-    void add(uint, int, int, int, int);
-    void print(void);
+    void add(uint start, int h, int i, int j, int k);
+                          // Add new connection to unit cell
+    void print(void);     // Print summary of unit cell to cout
 };
 
 class lattice: public graph{
@@ -93,26 +95,29 @@ class lattice: public graph{
     };
   protected:
   public:
-    // Constructors
-    lattice(void);
-    lattice(const lattice&);
-    lattice(lattice_t,uint,uint,uint);
-    // Destructor
-    ~lattice(void);
-    // Overloads
+    lattice(void);                // Empty constructor
+    lattice(const lattice& lat);  // Copy constructor
+    lattice(lattice_t D, uint L, uint M, uint N);
+                                  // Construct a LxMxN lattice with unit cell D
+    ~lattice(void);               // Destructor
     lattice operator=(const lattice&);
+                                  // Assignment operator
     // BFS-type stuff
-    void traverse();
+    void traverse();              // Perform bfs in all 6 directions
     std::vector<uint> findCrossings();
+                                  // Find the smallest crossing clusters
     // Access methods
     std::string label() const {return type.label;};
-    void print(void);
+                                  // Return the text label indicating the type
+                                  // of lattice
+    void print(void);             // Print summary of lattice to cout
 };
 
 namespace lattices{
   lattice_t raussendorf(void);
   lattice_t cubic(void);
   lattice_t diamond(void);
+  lattice_t diamond_grid(void);
 };
 
 #endif
